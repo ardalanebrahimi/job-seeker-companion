@@ -642,3 +642,141 @@ export class CoachingNudgesDto {
   })
   jdThemes: string[];
 }
+
+// V3 - Document Variants and Management DTOs
+
+export class VariantGenerateRequestDto {
+  @ApiProperty({
+    type: [String],
+    enum: ["concise", "balanced", "detailed"],
+    default: ["concise", "detailed"],
+  })
+  variants: string[];
+
+  @ApiProperty({ default: false })
+  regenerateExisting?: boolean;
+
+  @ApiProperty({ enum: DocumentFormat, default: DocumentFormat.docx })
+  targetFormat?: DocumentFormat;
+}
+
+export class EnhancedGeneratedDocDto extends GeneratedDocDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  version: number;
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty({ enum: ["modern", "minimal", "classic"] })
+  templateStyle: string;
+
+  @ApiProperty({ required: false })
+  coachingNote?: string;
+
+  @ApiProperty()
+  previewUrl: string;
+
+  @ApiProperty()
+  downloadUrl: string;
+}
+
+export class GeneratedVariantDto {
+  @ApiProperty({ enum: ["concise", "balanced", "detailed"] })
+  variantLabel: string;
+
+  @ApiProperty({ type: [EnhancedGeneratedDocDto] })
+  documents: EnhancedGeneratedDocDto[];
+
+  @ApiProperty()
+  coachingNote: string;
+}
+
+export class VariantGenerateResponseDto {
+  @ApiProperty({ type: [GeneratedVariantDto] })
+  variants: GeneratedVariantDto[];
+
+  @ApiProperty({ enum: ["concise", "balanced", "detailed"] })
+  recommendedVariant: string;
+}
+
+export class DocumentDiffChangeDto {
+  @ApiProperty({ enum: ["added", "removed", "modified"] })
+  type: "added" | "removed" | "modified";
+
+  @ApiProperty()
+  section: string;
+
+  @ApiProperty({ required: false })
+  originalText?: string;
+
+  @ApiProperty({ required: false })
+  modifiedText?: string;
+
+  @ApiProperty()
+  reason: string;
+
+  @ApiProperty()
+  sourceFact: string;
+}
+
+export class DocumentDiffSummaryDto {
+  @ApiProperty()
+  addedCount: number;
+
+  @ApiProperty()
+  removedCount: number;
+
+  @ApiProperty()
+  modifiedCount: number;
+
+  @ApiProperty({ type: [String] })
+  keyChanges: string[];
+}
+
+export class DocumentDiffDto {
+  @ApiProperty()
+  documentId: string;
+
+  @ApiProperty({ type: [DocumentDiffChangeDto] })
+  changes: DocumentDiffChangeDto[];
+
+  @ApiProperty({ type: DocumentDiffSummaryDto })
+  summary: DocumentDiffSummaryDto;
+}
+
+export class DocumentHistoryItemDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({ enum: DocumentKind })
+  kind: DocumentKind;
+
+  @ApiProperty({ enum: DocumentFormat })
+  format: DocumentFormat;
+
+  @ApiProperty({ required: false })
+  variantLabel?: string;
+
+  @ApiProperty()
+  version: number;
+
+  @ApiProperty()
+  uri: string;
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty()
+  isCurrent: boolean;
+}
+
+export class DocumentHistoryDto {
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty({ type: [DocumentHistoryItemDto] })
+  documents: DocumentHistoryItemDto[];
+}

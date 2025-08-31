@@ -715,4 +715,179 @@ export class CoachController {
       );
     }
   }
+
+  // V3 - Document Variants and Management
+  @Post(":id/variants")
+  @ApiOperation({
+    summary: "Generate multiple document variants for an application (V3)",
+    operationId: "generateDocumentVariants",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Document variants generated",
+  })
+  async generateDocumentVariants(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Body()
+    body: {
+      variants: string[];
+      regenerateExisting?: boolean;
+      targetFormat?: string;
+    }
+  ): Promise<any> {
+    try {
+      return await this.applicationsService.generateDocumentVariants(
+        req.userId,
+        applicationId,
+        body.variants,
+        body.targetFormat as any
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "VARIANT_GENERATION_FAILED",
+            message: error.message || "Failed to generate document variants",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/documents/:documentId/preview")
+  @ApiOperation({
+    summary: "Preview a document in the browser (V3)",
+    operationId: "previewDocument",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document preview",
+    content: {
+      "text/html": {
+        schema: { type: "string" },
+      },
+    },
+  })
+  async previewDocument(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Param("documentId") documentId: string
+  ): Promise<string> {
+    try {
+      return await this.applicationsService.previewDocument(
+        req.userId,
+        applicationId,
+        documentId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "PREVIEW_FAILED",
+            message: error.message || "Failed to preview document",
+          },
+        },
+        HttpStatus.NOT_FOUND
+      );
+    }
+  }
+
+  @Get(":id/documents/:documentId/download")
+  @ApiOperation({
+    summary: "Download a document file (V3)",
+    operationId: "downloadDocument",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document file",
+  })
+  async downloadDocument(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Param("documentId") documentId: string
+  ): Promise<any> {
+    try {
+      return await this.applicationsService.downloadDocument(
+        req.userId,
+        applicationId,
+        documentId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "DOWNLOAD_FAILED",
+            message: error.message || "Failed to download document",
+          },
+        },
+        HttpStatus.NOT_FOUND
+      );
+    }
+  }
+
+  @Get(":id/documents/:documentId/diff")
+  @ApiOperation({
+    summary: "Get diff between generated document and base CV (V3)",
+    operationId: "getDocumentDiff",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document diff",
+  })
+  async getDocumentDiff(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Param("documentId") documentId: string
+  ): Promise<any> {
+    try {
+      return await this.applicationsService.getDocumentDiff(
+        req.userId,
+        applicationId,
+        documentId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "DIFF_FAILED",
+            message: error.message || "Failed to generate document diff",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/documents/history")
+  @ApiOperation({
+    summary: "Get document history with versions (V3)",
+    operationId: "getDocumentHistory",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document history",
+  })
+  async getDocumentHistory(
+    @Req() req: any,
+    @Param("id") applicationId: string
+  ): Promise<any> {
+    try {
+      return await this.applicationsService.getDocumentHistory(
+        req.userId,
+        applicationId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "HISTORY_FETCH_FAILED",
+            message: error.message || "Failed to fetch document history",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 }

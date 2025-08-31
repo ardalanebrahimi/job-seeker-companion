@@ -280,6 +280,157 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /applications/{id}/variants:
+    post:
+      tags: [Applications]
+      summary: Generate multiple document variants for an application (V3)
+      operationId: generateDocumentVariants
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VariantGenerateRequest"
+      responses:
+        "201":
+          description: Document variants generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantGenerateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/documents/{documentId}/preview:
+    get:
+      tags: [Applications]
+      summary: Preview a document in the browser (V3)
+      operationId: previewDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Document preview
+          content:
+            text/html:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/documents/{documentId}/download:
+    get:
+      tags: [Applications]
+      summary: Download a document file (V3)
+      operationId: downloadDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Document file
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/documents/{documentId}/diff:
+    get:
+      tags: [Applications]
+      summary: Get diff between generated document and base CV (V3)
+      operationId: getDocumentDiff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Document diff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDiff"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/documents/history:
+    get:
+      tags: [Applications]
+      summary: Get document history with versions (V3)
+      operationId: getDocumentHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Document history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentHistory"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /applications/{id}/notes:
     post:
       tags: [Applications]
@@ -1300,3 +1451,154 @@ components:
                 additionalProperties: true
             required: [id, timestamp, type, description]
       required: [entries]
+
+    # --- V3 Schemas ---
+    VariantGenerateRequest:
+      type: object
+      properties:
+        variants:
+          type: array
+          items:
+            type: string
+            enum: [concise, balanced, detailed]
+          default: [concise, detailed]
+        regenerateExisting:
+          type: boolean
+          default: false
+        targetFormat:
+          $ref: "#/components/schemas/DocumentFormat"
+          default: docx
+      required: [variants]
+
+    VariantGenerateResponse:
+      type: object
+      properties:
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              variantLabel:
+                type: string
+                enum: [concise, balanced, detailed]
+              documents:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeneratedDoc"
+              coachingNote:
+                type: string
+                description: Short advice on when to use this variant
+            required: [variantLabel, documents]
+        recommendedVariant:
+          type: string
+          enum: [concise, balanced, detailed]
+          description: Agent's recommendation for this specific job
+      required: [variants]
+
+    DocumentDiff:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [added, removed, modified]
+              section:
+                type: string
+                description: Section name (e.g., "Experience", "Skills")
+              originalText:
+                type: string
+                nullable: true
+              modifiedText:
+                type: string
+                nullable: true
+              reason:
+                type: string
+                description: Why this change was made
+              sourceFact:
+                type: string
+                description: Reference to source fact in resume
+            required: [type, section]
+        summary:
+          type: object
+          properties:
+            addedCount:
+              type: integer
+            removedCount:
+              type: integer
+            modifiedCount:
+              type: integer
+            keyChanges:
+              type: array
+              items:
+                type: string
+          required: [addedCount, removedCount, modifiedCount, keyChanges]
+      required: [documentId, changes, summary]
+
+    DocumentHistory:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        documents:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              kind:
+                $ref: "#/components/schemas/DocumentKind"
+              format:
+                $ref: "#/components/schemas/DocumentFormat"
+              variantLabel:
+                type: string
+                nullable: true
+              version:
+                type: integer
+              uri:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
+              isCurrent:
+                type: boolean
+                description: Whether this is the current version for this variant
+            required: [id, kind, format, version, uri, createdAt, isCurrent]
+      required: [applicationId, documents]
+
+    # Enhanced GeneratedDoc for V3
+    EnhancedGeneratedDoc:
+      allOf:
+        - $ref: "#/components/schemas/GeneratedDoc"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            version:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            templateStyle:
+              type: string
+              enum: [modern, minimal, classic]
+            coachingNote:
+              type: string
+              nullable: true
+            previewUrl:
+              type: string
+              description: URL for browser preview
+            downloadUrl:
+              type: string
+              description: URL for file download
+          required: [id, version, createdAt, templateStyle]

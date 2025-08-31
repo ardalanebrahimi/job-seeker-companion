@@ -1,0 +1,85 @@
+<div class="v3-document-diff">
+  <div class="diff-header">
+    <h3>Document Changes</h3>
+    <p>See what was modified to tailor your document for this specific role.</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading document differences...</p>
+  </div>
+
+  <div *ngIf="error" class="error-state">
+    <p>{{ error }}</p>
+    <button (click)="loadDiff()" class="retry-btn">Try Again</button>
+  </div>
+
+  <div *ngIf="!loading && !error && diff" class="diff-content">
+    <!-- Summary Section -->
+    <div class="diff-summary">
+      <h4>Summary of Changes</h4>
+      <div class="summary-stats">
+        <div class="stat-item added">
+          <span class="stat-number">{{ diff.summary.addedCount }}</span>
+          <span class="stat-label">Added</span>
+        </div>
+        <div class="stat-item modified">
+          <span class="stat-number">{{ diff.summary.modifiedCount }}</span>
+          <span class="stat-label">Modified</span>
+        </div>
+        <div class="stat-item removed">
+          <span class="stat-number">{{ diff.summary.removedCount }}</span>
+          <span class="stat-label">Removed</span>
+        </div>
+      </div>
+
+      <div class="key-changes" *ngIf="diff.summary.keyChanges.length > 0">
+        <h5>Key Improvements:</h5>
+        <ul>
+          <li *ngFor="let change of diff.summary.keyChanges">{{ change }}</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Detailed Changes -->
+    <div class="changes-list">
+      <h4>Detailed Changes</h4>
+
+      <div
+        *ngFor="let change of diff.changes; trackBy: trackByIndex"
+        class="change-item"
+        [ngClass]="getChangeClass(change.type)"
+      >
+        <div class="change-header">
+          <span class="change-icon">{{ getChangeIcon(change.type) }}</span>
+          <span class="change-type">{{ change.type | titlecase }}</span>
+          <span class="change-section">{{ change.section }}</span>
+        </div>
+
+        <div class="change-content">
+          <div *ngIf="change.originalText" class="original-text">
+            <strong>Before:</strong>
+            <p>{{ change.originalText }}</p>
+          </div>
+
+          <div *ngIf="change.modifiedText" class="modified-text">
+            <strong>After:</strong>
+            <p>{{ change.modifiedText }}</p>
+          </div>
+
+          <div class="change-reason">
+            <strong>Why:</strong> {{ change.reason }}
+          </div>
+
+          <div class="source-fact">
+            <small>Source: {{ change.sourceFact }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && !error && !diff" class="empty-state">
+    <p>No differences to display.</p>
+  </div>
+</div>

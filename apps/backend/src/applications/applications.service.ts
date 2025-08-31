@@ -3,6 +3,9 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { CvService } from "../cv/cv.service";
 import { JobsService } from "../jobs/jobs.service";
+import { DocumentVariantsService } from "../documents/document-variants.service";
+import { DocumentDiffService } from "../documents/document-diff.service";
+import { DocumentGeneratorService } from "../documents/document-generator.service";
 import {
   AgentOrchestrator,
   AgentContext,
@@ -38,7 +41,10 @@ export class ApplicationsService {
     private prisma: PrismaService,
     private storage: StorageService,
     private cvService: CvService,
-    private jobsService: JobsService
+    private jobsService: JobsService,
+    private documentVariants: DocumentVariantsService,
+    private documentDiff: DocumentDiffService,
+    private documentGenerator: DocumentGeneratorService
   ) {
     this.agentOrchestrator = new AgentOrchestrator();
   }
@@ -732,5 +738,228 @@ export class ApplicationsService {
 
     // Mock implementation for now - would update coaching_hints table
     console.log(`Dismissed hint ${hintId} for application ${applicationId}`);
+  }
+
+  // V3 - Document Variants and Management
+
+  /**
+   * Generate multiple document variants for an application
+   */
+  async generateDocumentVariants(
+    userId: string,
+    applicationId: string,
+    variantLabels: string[],
+    targetFormat: DocumentFormat = DocumentFormat.docx
+  ): Promise<any> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    return await this.documentVariants.generateVariants(
+      applicationId,
+      variantLabels,
+      targetFormat
+    );
+  }
+
+  /**
+   * Preview a document in HTML format
+   */
+  async previewDocument(
+    userId: string,
+    applicationId: string,
+    documentId: string
+  ): Promise<string> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Get document record
+    const document = await this.prisma.applicationDoc.findFirst({
+      where: { id: documentId, applicationId },
+    });
+
+    if (!document) {
+      throw new Error("Document not found");
+    }
+
+    // For now, return a simple HTML preview
+    // In production, this would generate actual content based on the stored document
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Document Preview</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+          .document-info { background: #f5f5f5; padding: 10px; margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Document Preview</h1>
+        </div>
+        <div class="document-info">
+          <p><strong>Type:</strong> ${document.kind}</p>
+          <p><strong>Format:</strong> ${document.format}</p>
+          <p><strong>Variant:</strong> ${document.variantLabel || "Standard"}</p>
+        </div>
+        <div class="content">
+          <p>This is a preview of your ${document.kind} document.</p>
+          <p>In production, this would show the actual formatted content.</p>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Download a document file
+   */
+  async downloadDocument(
+    userId: string,
+    applicationId: string,
+    documentId: string
+  ): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Get document record
+    const document = await this.prisma.applicationDoc.findFirst({
+      where: { id: documentId, applicationId },
+    });
+
+    if (!document) {
+      throw new Error("Document not found");
+    }
+
+    // Read file from storage
+    const buffer = await this.storage.read(document.blobUri);
+
+    const contentType =
+      document.format === DocumentFormat.pdf
+        ? "application/pdf"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    const extension = document.format === DocumentFormat.pdf ? "pdf" : "docx";
+    const filename = `${document.kind}-${document.variantLabel || "standard"}.${extension}`;
+
+    return {
+      buffer,
+      filename,
+      contentType,
+    };
+  }
+
+  /**
+   * Get diff between generated document and base CV
+   */
+  async getDocumentDiff(
+    userId: string,
+    applicationId: string,
+    documentId: string
+  ): Promise<any> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Get document record
+    const document = await this.prisma.applicationDoc.findFirst({
+      where: { id: documentId, applicationId },
+    });
+
+    if (!document) {
+      throw new Error("Document not found");
+    }
+
+    // For now, return a mock diff
+    // In production, this would generate actual diffs based on stored content
+    return {
+      documentId,
+      changes: [
+        {
+          type: "modified",
+          section: "Professional Summary",
+          originalText:
+            "Experienced software developer with strong technical skills.",
+          modifiedText: `Experienced software developer with expertise in ${application.job.title} technologies.`,
+          reason: `Emphasized skills relevant to ${application.job.title} role`,
+          sourceFact: "profile_summary",
+        },
+        {
+          type: "added",
+          section: "Core Skills",
+          modifiedText: "React, Node.js, TypeScript",
+          reason: "Added skills relevant to job requirements",
+          sourceFact: "resume_facts",
+        },
+      ],
+      summary: {
+        addedCount: 1,
+        removedCount: 0,
+        modifiedCount: 1,
+        keyChanges: ["Tailored professional summary", "Added relevant skills"],
+      },
+    };
+  }
+
+  /**
+   * Get document history with versions
+   */
+  async getDocumentHistory(
+    userId: string,
+    applicationId: string
+  ): Promise<any> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Get all documents for this application
+    const documents = await this.prisma.applicationDoc.findMany({
+      where: { applicationId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      applicationId,
+      documents: documents.map((doc, index) => ({
+        id: doc.id,
+        kind: doc.kind,
+        format: doc.format,
+        variantLabel: doc.variantLabel,
+        version: index + 1, // Simple versioning for now
+        uri: doc.blobUri,
+        createdAt: doc.createdAt.toISOString(),
+        isCurrent: index === 0, // Most recent is current
+      })),
+    };
   }
 }

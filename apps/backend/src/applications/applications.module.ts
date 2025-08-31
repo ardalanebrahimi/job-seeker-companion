@@ -9,9 +9,10 @@ import { PrismaModule } from "../prisma/prisma.module";
 import { StorageModule } from "../storage/storage.module";
 import { CvModule } from "../cv/cv.module";
 import { JobsModule } from "../jobs/jobs.module";
+import { DocumentsModule } from "../documents/documents.module";
 
 @Module({
-  imports: [PrismaModule, StorageModule, CvModule, JobsModule],
+  imports: [PrismaModule, StorageModule, CvModule, JobsModule, DocumentsModule],
   controllers: [ApplicationsController, RemindersController, CoachController],
   providers: [ApplicationsService],
   exports: [ApplicationsService],

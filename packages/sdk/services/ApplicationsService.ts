@@ -8,12 +8,16 @@ import type { ApplicationGenerateResponse } from '../models/ApplicationGenerateR
 import type { ApplicationList } from '../models/ApplicationList';
 import type { ApplicationStatus } from '../models/ApplicationStatus';
 import type { ApplicationSummary } from '../models/ApplicationSummary';
+import type { DocumentDiff } from '../models/DocumentDiff';
+import type { DocumentHistory } from '../models/DocumentHistory';
 import type { Note } from '../models/Note';
 import type { NoteCreate } from '../models/NoteCreate';
 import type { Reminder } from '../models/Reminder';
 import type { ReminderCreate } from '../models/ReminderCreate';
 import type { ReminderWithApplication } from '../models/ReminderWithApplication';
 import type { StatusUpdate } from '../models/StatusUpdate';
+import type { VariantGenerateRequest } from '../models/VariantGenerateRequest';
+import type { VariantGenerateResponse } from '../models/VariantGenerateResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -125,6 +129,130 @@ export class ApplicationsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/applications/{id}',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Generate multiple document variants for an application (V3)
+     * @returns VariantGenerateResponse Document variants generated
+     * @throws ApiError
+     */
+    public static generateDocumentVariants({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: VariantGenerateRequest,
+    }): CancelablePromise<VariantGenerateResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/applications/{id}/variants',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Preview a document in the browser (V3)
+     * @returns string Document preview
+     * @throws ApiError
+     */
+    public static previewDocument({
+        id,
+        documentId,
+    }: {
+        id: string,
+        documentId: string,
+    }): CancelablePromise<string> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/documents/{documentId}/preview',
+            path: {
+                'id': id,
+                'documentId': documentId,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Download a document file (V3)
+     * @returns binary Document file
+     * @throws ApiError
+     */
+    public static downloadDocument({
+        id,
+        documentId,
+    }: {
+        id: string,
+        documentId: string,
+    }): CancelablePromise<Blob> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/documents/{documentId}/download',
+            path: {
+                'id': id,
+                'documentId': documentId,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get diff between generated document and base CV (V3)
+     * @returns DocumentDiff Document diff
+     * @throws ApiError
+     */
+    public static getDocumentDiff({
+        id,
+        documentId,
+    }: {
+        id: string,
+        documentId: string,
+    }): CancelablePromise<DocumentDiff> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/documents/{documentId}/diff',
+            path: {
+                'id': id,
+                'documentId': documentId,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get document history with versions (V3)
+     * @returns DocumentHistory Document history
+     * @throws ApiError
+     */
+    public static getDocumentHistory({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<DocumentHistory> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/documents/history',
             path: {
                 'id': id,
             },

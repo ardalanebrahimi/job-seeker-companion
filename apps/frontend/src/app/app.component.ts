@@ -20,6 +20,9 @@ import { RouterOutlet, RouterLink } from "@angular/router";
             <a routerLink="/applications/v1" class="nav-link"
               >Tracker V1 (Legacy)</a
             >
+            <a routerLink="/applications/test-123/variants" class="nav-link"
+              >V3 Document Variants ⚡</a
+            >
           </nav>
         </div>
       </header>

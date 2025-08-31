@@ -1,0 +1,130 @@
+<div class="v3-document-variants">
+  <div class="variants-header">
+    <h3>Document Variants (V3)</h3>
+    <p>
+      Generate multiple versions of your CV and cover letter to find the perfect
+      fit for this role.
+    </p>
+  </div>
+
+  <div class="variant-controls">
+    <div class="control-group">
+      <label>Select Variants:</label>
+      <div class="variant-checkboxes">
+        <div
+          *ngFor="let option of variantOptions"
+          class="variant-option"
+          [class.recommended]="option.value === recommendedVariant"
+        >
+          <input
+            type="checkbox"
+            [id]="'variant-' + option.value"
+            [checked]="isVariantSelected(option.value)"
+            (change)="onCheckboxChange($event, option.value)"
+          />
+          <label [for]="'variant-' + option.value">
+            <strong>{{ option.label }}</strong>
+            <span
+              *ngIf="option.value === recommendedVariant"
+              class="recommended-badge"
+              >Recommended</span
+            >
+            <br />
+            <small>{{ option.description }}</small>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label for="format-select">Format:</label>
+      <select id="format-select" [(ngModel)]="targetFormat">
+        <option *ngFor="let format of formatOptions" [value]="format.value">
+          {{ format.label }}
+        </option>
+      </select>
+    </div>
+
+    <button
+      class="generate-btn"
+      [disabled]="loading || selectedVariants.length === 0"
+      (click)="generateVariants()"
+    >
+      <span *ngIf="loading">Generating...</span>
+      <span *ngIf="!loading">Generate Variants</span>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Generating document variants...</p>
+  </div>
+
+  <div *ngIf="!loading && variants.length > 0" class="variants-grid">
+    <div
+      *ngFor="let variant of variants"
+      class="variant-card"
+      [class.recommended]="variant.variantLabel === recommendedVariant"
+    >
+      <div class="variant-header">
+        <h4>
+          {{ getVariantIcon(variant.variantLabel) }}
+          {{ variant.variantLabel | titlecase }}
+          <span
+            *ngIf="variant.variantLabel === recommendedVariant"
+            class="recommended-badge"
+          >
+            ⭐ Recommended
+          </span>
+        </h4>
+        <p class="coaching-note">{{ variant.coachingNote }}</p>
+      </div>
+
+      <div class="documents-list">
+        <div *ngFor="let doc of variant.documents" class="document-item">
+          <div class="document-info">
+            <span class="document-icon">{{ getDocumentIcon(doc.kind) }}</span>
+            <div class="document-details">
+              <span class="document-title">{{ doc.kind | titlecase }}</span>
+              <span class="document-meta"
+                >{{ doc.format | uppercase }} •
+                {{ doc.templateStyle | titlecase }}</span
+              >
+            </div>
+          </div>
+
+          <div class="document-actions">
+            <button
+              class="action-btn preview-btn"
+              (click)="previewDocument(applicationId, doc.id)"
+              title="Preview document"
+            >
+              👁️ Preview
+            </button>
+            <button
+              class="action-btn download-btn"
+              (click)="downloadDocument(applicationId, doc.id)"
+              title="Download document"
+            >
+              📥 Download
+            </button>
+            <button
+              class="action-btn diff-btn"
+              (click)="viewDiff(applicationId, doc.id)"
+              title="View changes"
+            >
+              🔍 Diff
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && variants.length === 0" class="empty-state">
+    <p>
+      No variants generated yet. Click "Generate Variants" to create your
+      documents.
+    </p>
+  </div>
+</div>
