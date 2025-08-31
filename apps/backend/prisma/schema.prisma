@@ -32,3 +32,101 @@ model ResumeFact {
   @@index([userId, kind])
   @@map("resume_facts")
 }
+
+model JobPosting {
+  id           String   @id @default(uuid())
+  source       String   // "manual" | "url" | "connector"
+  url          String?
+  company      String?
+  title        String?
+  location     String?
+  jdText       String
+  jdStructJson Json?    // structured JD data
+  rawHtmlUri   String?  // blob reference
+  createdAt    DateTime @default(now())
+  
+  applications Application[]
+
+  @@map("job_postings")
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  userId      String
+  jobId       String
+  status      ApplicationStatus @default(Found)
+  appliedAt   DateTime?
+  nextEventAt DateTime?
+  notesMd     String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  job       JobPosting        @relation(fields: [jobId], references: [id])
+  docs      ApplicationDoc[]
+  decisions DecisionLog[]
+  notes     Note[]
+
+  @@map("applications")
+}
+
+model ApplicationDoc {
+  id            String         @id @default(uuid())
+  applicationId String
+  kind          DocumentKind
+  format        DocumentFormat
+  blobUri       String
+  checksum      String?
+  variantLabel  String?
+  language      String?
+  createdAt     DateTime       @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@map("application_docs")
+}
+
+model DecisionLog {
+  id                 String   @id @default(uuid())
+  applicationId      String
+  personaLabel       String?
+  realityIndex       Int?     // 0-2
+  signalsJson        Json?    // array of match signals
+  keywordsEmphasized Json?    // array of keywords
+  createdAt          DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@map("decision_logs")
+}
+
+model Note {
+  id            String   @id @default(uuid())
+  applicationId String
+  text          String
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@map("notes")
+}
+
+enum ApplicationStatus {
+  Found
+  Applied
+  Interview
+  Offer
+  Rejected
+}
+
+enum DocumentKind {
+  cv
+  cover
+  brochure
+  prep
+}
+
+enum DocumentFormat {
+  md
+  docx
+  pdf
+}

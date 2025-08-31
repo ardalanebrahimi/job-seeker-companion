@@ -12,6 +12,10 @@ import { RouterOutlet, RouterLink } from "@angular/router";
           <h1>Job Companion</h1>
           <nav>
             <a routerLink="/profile/cv" class="nav-link">CV Management</a>
+            <a routerLink="/generate" class="nav-link">Generate Application</a>
+            <a routerLink="/applications" class="nav-link"
+              >Application Tracker</a
+            >
           </nav>
         </div>
       </header>

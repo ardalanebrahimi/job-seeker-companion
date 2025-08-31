@@ -13,4 +13,18 @@ export const routes: Routes = [
         (m) => m.CvPageComponent
       ),
   },
+  {
+    path: "generate",
+    loadComponent: () =>
+      import("./features/applications/generate-page.component").then(
+        (m) => m.GeneratePageComponent
+      ),
+  },
+  {
+    path: "applications",
+    loadComponent: () =>
+      import("./features/applications/applications-tracker.component").then(
+        (m) => m.ApplicationsTrackerComponent
+      ),
+  },
 ];
