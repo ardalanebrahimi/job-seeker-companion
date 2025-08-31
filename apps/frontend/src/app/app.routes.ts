@@ -65,15 +65,15 @@ export const routes: Routes = [
   {
     path: "applications/:id/variants",
     loadComponent: () =>
-      import("./features/applications/v3-documents/v3-document-variants.component").then(
-        (m) => m.V3DocumentVariantsComponent
-      ),
+      import(
+        "./features/applications/v3-documents/v3-document-variants.component"
+      ).then((m) => m.V3DocumentVariantsComponent),
   },
   {
     path: "applications/:id/documents/:documentId/diff",
     loadComponent: () =>
-      import("./features/applications/v3-documents/v3-document-diff.component").then(
-        (m) => m.V3DocumentDiffComponent
-      ),
+      import(
+        "./features/applications/v3-documents/v3-document-diff.component"
+      ).then((m) => m.V3DocumentDiffComponent),
   },
 ];

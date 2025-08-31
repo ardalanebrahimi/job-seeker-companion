@@ -38,20 +38,17 @@ export class V3DocumentDiffComponent implements OnInit {
   diff: DocumentDiff | null = null;
   error: string | null = null;
 
-  constructor(
-    private route: ActivatedRoute,
-    private http: HttpClient
-  ) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient) {}
 
   ngOnInit() {
     // Get parameters from route if not provided via @Input
     if (!this.applicationId) {
-      this.applicationId = this.route.snapshot.paramMap.get('id') || '';
+      this.applicationId = this.route.snapshot.paramMap.get("id") || "";
     }
     if (!this.documentId) {
-      this.documentId = this.route.snapshot.paramMap.get('documentId') || '';
+      this.documentId = this.route.snapshot.paramMap.get("documentId") || "";
     }
-    
+
     this.loadDiff();
   }
 

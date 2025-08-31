@@ -6,9 +6,9 @@ import { HttpClient } from "@angular/common/http";
 
 // Define interfaces locally for now
 interface VariantGenerateRequest {
-  variants: Array<'concise' | 'balanced' | 'detailed'>;
+  variants: Array<"concise" | "balanced" | "detailed">;
   regenerateExisting?: boolean;
-  targetFormat?: 'docx' | 'pdf';
+  targetFormat?: "docx" | "pdf";
 }
 
 interface DocumentVariant {
@@ -68,17 +68,14 @@ export class V3DocumentVariantsComponent implements OnInit {
     { value: "pdf" as const, label: "PDF" },
   ];
 
-  constructor(
-    private route: ActivatedRoute,
-    private http: HttpClient
-  ) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient) {}
 
   ngOnInit() {
     // Get applicationId from route params if not provided via @Input
     if (!this.applicationId) {
-      this.applicationId = this.route.snapshot.paramMap.get('id') || '';
+      this.applicationId = this.route.snapshot.paramMap.get("id") || "";
     }
-    
+
     // Auto-generate default variants on load
     if (this.applicationId) {
       this.generateVariants();
@@ -94,7 +91,9 @@ export class V3DocumentVariantsComponent implements OnInit {
 
     try {
       const request: VariantGenerateRequest = {
-        variants: this.selectedVariants as Array<'concise' | 'balanced' | 'detailed'>,
+        variants: this.selectedVariants as Array<
+          "concise" | "balanced" | "detailed"
+        >,
         targetFormat: this.targetFormat,
       };
 
@@ -164,11 +163,11 @@ export class V3DocumentVariantsComponent implements OnInit {
           { responseType: "blob" }
         )
         .toPromise();
-      
+
       if (blob) {
         // Create download URL and trigger download
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = `document-${documentId}`;
         document.body.appendChild(a);
