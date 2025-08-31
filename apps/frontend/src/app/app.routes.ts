@@ -30,8 +30,36 @@ export const routes: Routes = [
   {
     path: "applications",
     loadComponent: () =>
+      import("./features/applications/applications-tracker-v2.component").then(
+        (m) => m.ApplicationsTrackerV2Component
+      ),
+  },
+  {
+    path: "applications/v1",
+    loadComponent: () =>
       import("./features/applications/applications-tracker.component").then(
         (m) => m.ApplicationsTrackerComponent
+      ),
+  },
+  {
+    path: "applications/:id",
+    loadComponent: () =>
+      import("./features/applications/generate-page.component").then(
+        (m) => m.GeneratePageComponent
+      ),
+  },
+  {
+    path: "applications/:id/edit",
+    loadComponent: () =>
+      import("./features/applications/generate-page.component").then(
+        (m) => m.GeneratePageComponent
+      ),
+  },
+  {
+    path: "applications/:id/documents",
+    loadComponent: () =>
+      import("./features/applications/generate-page.component").then(
+        (m) => m.GeneratePageComponent
       ),
   },
 ];

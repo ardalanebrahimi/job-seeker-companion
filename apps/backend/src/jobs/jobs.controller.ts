@@ -14,6 +14,7 @@ import {
   JobIngestRequestDto,
   JobIngestResponseDto,
   JobDetailDto,
+  DuplicateCheckResponseDto,
   ErrorDto,
 } from "../common/dto";
 
@@ -121,6 +122,66 @@ export class JobsController {
           error: {
             code: "FETCH_FAILED",
             message: "Failed to fetch job",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post("check-duplicate")
+  @ApiOperation({
+    summary: "Check if a job is a duplicate of an existing one (V2)",
+    operationId: "checkJobDuplicate",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Duplicate check result",
+    type: DuplicateCheckResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request",
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+    type: ErrorDto,
+  })
+  async checkJobDuplicate(
+    @Body() request: JobIngestRequestDto,
+    @Req() req: any
+  ): Promise<DuplicateCheckResponseDto> {
+    try {
+      // Validate that either url or rawText is provided
+      if (!request.url && !request.rawText) {
+        throw new HttpException(
+          {
+            error: {
+              code: "INVALID_REQUEST",
+              message: "Either url or rawText must be provided",
+            },
+          },
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      const result = await this.jobsService.checkJobDuplicate(
+        req.userId,
+        request
+      );
+      return result;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new HttpException(
+        {
+          error: {
+            code: "DUPLICATE_CHECK_FAILED",
+            message: "Failed to check for duplicates",
           },
         },
         HttpStatus.INTERNAL_SERVER_ERROR

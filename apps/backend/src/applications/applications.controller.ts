@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Param,
   Query,
@@ -23,6 +25,10 @@ import {
   NoteDto,
   StatusUpdateDto,
   ApplicationSummaryDto,
+  ReminderCreateDto,
+  ReminderDto,
+  ReminderWithApplicationDto,
+  CoachingHintsDto,
   ErrorDto,
 } from "../common/dto";
 
@@ -165,15 +171,28 @@ export class ApplicationsController {
 
   @Get()
   @ApiOperation({
-    summary: "List applications (summary)",
+    summary: "List applications with filtering and search (V2)",
     operationId: "listApplications",
   })
-  @ApiQuery({ name: "status", enum: ApplicationStatus, required: false })
   @ApiQuery({ name: "page", type: "integer", required: false })
   @ApiQuery({ name: "pageSize", type: "integer", required: false })
+  @ApiQuery({ name: "status", enum: ApplicationStatus, required: false })
+  @ApiQuery({ name: "company", type: "string", required: false })
+  @ApiQuery({
+    name: "search",
+    type: "string",
+    required: false,
+    description: "Search in company, title, and notes",
+  })
+  @ApiQuery({
+    name: "sortBy",
+    enum: ["createdAt", "appliedAt", "status", "company"],
+    required: false,
+  })
+  @ApiQuery({ name: "sortOrder", enum: ["asc", "desc"], required: false })
   @ApiResponse({
     status: 200,
-    description: "Paged application summaries",
+    description: "List of applications",
     type: ApplicationListDto,
   })
   @ApiResponse({
@@ -183,9 +202,13 @@ export class ApplicationsController {
   })
   async listApplications(
     @Req() req: any,
-    @Query("status") status?: ApplicationStatus,
     @Query("page", new DefaultValuePipe(1), ParseIntPipe) page = 1,
-    @Query("pageSize", new DefaultValuePipe(20), ParseIntPipe) pageSize = 20
+    @Query("pageSize", new DefaultValuePipe(20), ParseIntPipe) pageSize = 20,
+    @Query("status") status?: ApplicationStatus,
+    @Query("company") company?: string,
+    @Query("search") search?: string,
+    @Query("sortBy", new DefaultValuePipe("createdAt")) sortBy = "createdAt",
+    @Query("sortOrder", new DefaultValuePipe("desc")) sortOrder = "desc"
   ): Promise<ApplicationListDto> {
     try {
       const result = await this.applicationsService.listApplications(
@@ -380,6 +403,312 @@ export class ApplicationsController {
           error: {
             code: "STATUS_UPDATE_FAILED",
             message: "Failed to update status",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  // V2 Endpoints
+
+  @Put(":id/notes/:noteId")
+  @ApiOperation({
+    summary: "Update a note on an application (V2)",
+    operationId: "updateApplicationNote",
+  })
+  async updateApplicationNote(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Param("noteId") noteId: string,
+    @Body() body: NoteCreateDto
+  ): Promise<NoteDto> {
+    try {
+      return await this.applicationsService.updateNote(
+        req.userId,
+        applicationId,
+        noteId,
+        body.text
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "NOTE_UPDATE_FAILED",
+            message: "Failed to update note",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete(":id/notes/:noteId")
+  @ApiOperation({
+    summary: "Delete a note from an application (V2)",
+    operationId: "deleteApplicationNote",
+  })
+  @ApiResponse({ status: 204, description: "Note deleted" })
+  async deleteApplicationNote(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Param("noteId") noteId: string
+  ): Promise<void> {
+    try {
+      await this.applicationsService.deleteNote(
+        req.userId,
+        applicationId,
+        noteId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "NOTE_DELETE_FAILED",
+            message: "Failed to delete note",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(":id/reminders")
+  @ApiOperation({
+    summary: "Set a reminder for an application (V2)",
+    operationId: "setApplicationReminder",
+  })
+  async setApplicationReminder(
+    @Req() req: any,
+    @Param("id") applicationId: string,
+    @Body() body: ReminderCreateDto
+  ): Promise<ReminderDto> {
+    try {
+      return await this.applicationsService.setReminder(
+        req.userId,
+        applicationId,
+        body
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "REMINDER_SET_FAILED",
+            message: "Failed to set reminder",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/reminders")
+  @ApiOperation({
+    summary: "Get reminders for an application (V2)",
+    operationId: "getApplicationReminders",
+  })
+  async getApplicationReminders(
+    @Req() req: any,
+    @Param("id") applicationId: string
+  ): Promise<ReminderDto[]> {
+    try {
+      return await this.applicationsService.getApplicationReminders(
+        req.userId,
+        applicationId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "REMINDERS_FETCH_FAILED",
+            message: "Failed to fetch reminders",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Delete(":id/delete")
+  @ApiOperation({
+    summary: "Delete an application and all linked documents (V2)",
+    operationId: "deleteApplication",
+  })
+  @ApiResponse({ status: 204, description: "Application deleted" })
+  async deleteApplication(
+    @Req() req: any,
+    @Param("id") applicationId: string
+  ): Promise<void> {
+    try {
+      await this.applicationsService.deleteApplication(
+        req.userId,
+        applicationId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "APPLICATION_DELETE_FAILED",
+            message: "Failed to delete application",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get("export")
+  @ApiOperation({
+    summary: "Export applications list (V2)",
+    operationId: "exportApplications",
+  })
+  @ApiQuery({ name: "format", enum: ["csv", "json"], required: false })
+  @ApiQuery({ name: "status", enum: ApplicationStatus, required: false })
+  @ApiQuery({ name: "company", type: "string", required: false })
+  @ApiQuery({ name: "search", type: "string", required: false })
+  async exportApplications(
+    @Req() req: any,
+    @Query("format", new DefaultValuePipe("csv")) format = "csv",
+    @Query("status") status?: ApplicationStatus,
+    @Query("company") company?: string,
+    @Query("search") search?: string
+  ): Promise<ApplicationSummaryDto[]> {
+    try {
+      return await this.applicationsService.exportApplications(req.userId, {
+        status,
+        company,
+        search,
+      });
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "EXPORT_FAILED",
+            message: "Failed to export applications",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+}
+
+@ApiTags("Applications")
+@Controller("reminders")
+export class RemindersController {
+  constructor(private applicationsService: ApplicationsService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: "Get upcoming reminders across all applications (V2)",
+    operationId: "getUpcomingReminders",
+  })
+  @ApiQuery({ name: "limit", type: "integer", required: false })
+  async getUpcomingReminders(
+    @Req() req: any,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit = 10
+  ): Promise<ReminderWithApplicationDto[]> {
+    try {
+      return await this.applicationsService.getUpcomingReminders(
+        req.userId,
+        limit
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "REMINDERS_FETCH_FAILED",
+            message: "Failed to fetch reminders",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(":id/complete")
+  @ApiOperation({
+    summary: "Mark a reminder as completed (V2)",
+    operationId: "completeReminder",
+  })
+  async completeReminder(
+    @Req() req: any,
+    @Param("id") reminderId: string
+  ): Promise<ReminderDto> {
+    try {
+      return await this.applicationsService.completeReminder(
+        req.userId,
+        reminderId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "REMINDER_COMPLETE_FAILED",
+            message: "Failed to complete reminder",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+}
+
+@ApiTags("Coach")
+@Controller("coach")
+export class CoachController {
+  constructor(private applicationsService: ApplicationsService) {}
+
+  @Get("hints/:applicationId")
+  @ApiOperation({
+    summary: "Get coaching hints for an application (V2)",
+    operationId: "getApplicationCoachingHints",
+  })
+  async getApplicationCoachingHints(
+    @Req() req: any,
+    @Param("applicationId") applicationId: string
+  ): Promise<CoachingHintsDto> {
+    try {
+      return await this.applicationsService.getApplicationCoachingHints(
+        req.userId,
+        applicationId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "HINTS_FETCH_FAILED",
+            message: "Failed to fetch coaching hints",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post("hints/:applicationId/dismiss")
+  @ApiOperation({
+    summary: "Dismiss a coaching hint for an application (V2)",
+    operationId: "dismissCoachingHint",
+  })
+  @ApiResponse({ status: 204, description: "Hint dismissed" })
+  async dismissCoachingHint(
+    @Req() req: any,
+    @Param("applicationId") applicationId: string,
+    @Body() body: { hintId: string }
+  ): Promise<void> {
+    try {
+      await this.applicationsService.dismissCoachingHint(
+        req.userId,
+        applicationId,
+        body.hintId
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "HINT_DISMISS_FAILED",
+            message: "Failed to dismiss hint",
           },
         },
         HttpStatus.INTERNAL_SERVER_ERROR

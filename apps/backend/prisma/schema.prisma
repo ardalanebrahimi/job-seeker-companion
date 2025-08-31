@@ -40,6 +40,7 @@ model JobPosting {
   jdText       String
   jdStructJson Json?
   rawHtmlUri   String?
+  embedding    String?       // Base64 encoded vector for similarity search
   createdAt    DateTime      @default(now())
   applications Application[]
 
@@ -60,6 +61,8 @@ model Application {
   job         JobPosting        @relation(fields: [jobId], references: [id])
   decisions   DecisionLog[]
   notes       Note[]
+  reminders   Reminder[]
+  history     ApplicationHistory[]
 
   @@map("applications")
 }
@@ -74,7 +77,7 @@ model ApplicationDoc {
   variantLabel  String?
   language      String?
   createdAt     DateTime       @default(now())
-  application   Application    @relation(fields: [applicationId], references: [id])
+  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("application_docs")
 }
@@ -90,7 +93,7 @@ model DecisionLog {
   switchesJson        Json?
   provenanceLinksJson Json?
   createdAt           DateTime    @default(now())
-  application         Application @relation(fields: [applicationId], references: [id])
+  application         Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("decision_logs")
 }
@@ -100,9 +103,81 @@ model Note {
   applicationId String
   text          String
   createdAt     DateTime    @default(now())
-  application   Application @relation(fields: [applicationId], references: [id])
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("notes")
+}
+
+// V2 Models
+model Reminder {
+  id            String      @id @default(uuid())
+  applicationId String
+  dueAt         DateTime
+  kind          ReminderKind
+  title         String?
+  description   String?
+  completed     Boolean     @default(false)
+  completedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+}
+
+model ApplicationHistory {
+  id            String      @id @default(uuid())
+  applicationId String
+  timestamp     DateTime    @default(now())
+  type          HistoryType
+  description   String
+  metadata      Json?
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("application_history")
+}
+
+model CoachingHint {
+  id            String         @id @default(uuid())
+  applicationId String
+  category      HintCategory
+  title         String
+  description   String
+  priority      HintPriority
+  dismissed     Boolean        @default(false)
+  dismissedAt   DateTime?
+  createdAt     DateTime       @default(now())
+
+  @@map("coaching_hints")
+}
+
+enum ReminderKind {
+  followup
+  interview
+  task
+}
+
+enum HistoryType {
+  status_change
+  note_added
+  note_updated
+  note_deleted
+  reminder_set
+  reminder_completed
+  document_generated
+}
+
+enum HintCategory {
+  next_step
+  follow_up
+  improvement
+  preparation
+}
+
+enum HintPriority {
+  high
+  medium
+  low
 }
 
 enum ApplicationStatus {

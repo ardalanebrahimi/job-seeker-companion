@@ -1,7 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
-import { JobIngestRequestDto, JobDetailDto, JdStructDto } from "../common/dto";
+import {
+  JobIngestRequestDto,
+  JobDetailDto,
+  JdStructDto,
+  DuplicateCheckResponseDto,
+} from "../common/dto";
 import axios from "axios";
 import * as cheerio from "cheerio";
 
@@ -224,6 +229,119 @@ export class JobsService {
       requirements: requirements.slice(0, 10), // Limit to 10
       niceToHave: niceToHave.slice(0, 5), // Limit to 5
       seniority: seniority || undefined,
+    };
+  }
+
+  // V2 Method - Duplicate Check
+  async checkJobDuplicate(
+    userId: string,
+    request: JobIngestRequestDto
+  ): Promise<DuplicateCheckResponseDto> {
+    let jdText: string;
+
+    if (request.url) {
+      // Fetch content from URL to get the job text
+      const response = await axios.get<string>(request.url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      });
+      jdText = this.extractTextFromHtml(response.data);
+    } else if (request.rawText) {
+      jdText = request.rawText.trim();
+    } else {
+      throw new Error("Either URL or rawText must be provided");
+    }
+
+    // Analyze the job to extract key information
+    const analysis = await this.analyzeJobDescription(jdText);
+
+    // Find similar jobs for this user
+    const existingJobs = await this.prisma.jobPosting.findMany({
+      include: {
+        applications: {
+          where: { userId },
+          select: { id: true, status: true },
+        },
+      },
+    });
+
+    // Simple duplicate detection logic
+    for (const existingJob of existingJobs) {
+      let similarityScore = 0;
+
+      // Check company match (case insensitive)
+      if (
+        analysis.company &&
+        existingJob.company &&
+        analysis.company.toLowerCase() === existingJob.company.toLowerCase()
+      ) {
+        similarityScore += 0.4;
+      }
+
+      // Check title similarity (case insensitive, partial match)
+      if (
+        analysis.title &&
+        existingJob.title &&
+        (analysis.title
+          .toLowerCase()
+          .includes(existingJob.title.toLowerCase()) ||
+          existingJob.title
+            .toLowerCase()
+            .includes(analysis.title.toLowerCase()))
+      ) {
+        similarityScore += 0.3;
+      }
+
+      // Check location match
+      if (
+        analysis.location &&
+        existingJob.location &&
+        analysis.location.toLowerCase() === existingJob.location.toLowerCase()
+      ) {
+        similarityScore += 0.2;
+      }
+
+      // Check content similarity (very basic - would use embeddings in production)
+      const jdWords = jdText.toLowerCase().split(/\s+/);
+      const existingWords = existingJob.jdText.toLowerCase().split(/\s+/);
+      const commonWords = jdWords.filter(
+        (word) => word.length > 3 && existingWords.includes(word)
+      );
+      const contentSimilarity =
+        commonWords.length / Math.max(jdWords.length, existingWords.length);
+      similarityScore += contentSimilarity * 0.1;
+
+      // If similarity is high enough, consider it a duplicate
+      if (similarityScore > 0.85) {
+        const hasApplication = existingJob.applications.length > 0;
+        const applicationStatus = hasApplication
+          ? existingJob.applications[0].status
+          : null;
+
+        let reason = "Similar job posting found";
+        if (hasApplication) {
+          reason = `You already applied to this job (Status: ${applicationStatus})`;
+        }
+
+        return {
+          isDuplicate: true,
+          similarityScore,
+          existingJobId: existingJob.id,
+          existingApplicationId: hasApplication
+            ? existingJob.applications[0].id
+            : undefined,
+          reason,
+          canOverride: true,
+        };
+      }
+    }
+
+    return {
+      isDuplicate: false,
+      similarityScore: 0,
+      canOverride: true,
     };
   }
 }

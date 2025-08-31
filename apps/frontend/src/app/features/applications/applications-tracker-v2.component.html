@@ -1,0 +1,231 @@
+<div class="applications-tracker-v2">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1 class="title">Application Tracker</h1>
+      <p class="subtitle">Manage and track your job applications</p>
+    </div>
+    <div class="header-actions">
+      <button
+        class="btn btn-primary"
+        (click)="exportApplications()"
+        [disabled]="loading()"
+      >
+        📄 Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <!-- Search -->
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search companies, titles, or notes..."
+          [(ngModel)]="filters().search"
+          (input)="onFilterChange()"
+          class="search-input"
+        />
+        <span class="search-icon">🔍</span>
+      </div>
+
+      <!-- Status Filter -->
+      <select
+        [(ngModel)]="filters().status"
+        (change)="onFilterChange()"
+        class="status-filter"
+      >
+        <option *ngFor="let option of statusOptions" [ngValue]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+
+      <!-- Company Filter -->
+      <input
+        type="text"
+        placeholder="Filter by company..."
+        [(ngModel)]="filters().company"
+        (input)="onFilterChange()"
+        class="company-filter"
+      />
+
+      <!-- Sort Options -->
+      <select
+        [(ngModel)]="filters().sortBy"
+        (change)="onFilterChange()"
+        class="sort-filter"
+      >
+        <option *ngFor="let option of sortOptions" [value]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+
+      <select
+        [(ngModel)]="filters().sortOrder"
+        (change)="onFilterChange()"
+        class="sort-order"
+      >
+        <option value="desc">Newest First</option>
+        <option value="asc">Oldest First</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading applications...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" class="error-state">
+    <div class="error-message">
+      <span class="error-icon">⚠️</span>
+      <p>{{ error() }}</p>
+      <button class="btn btn-secondary" (click)="loadApplications()">
+        Try Again
+      </button>
+    </div>
+  </div>
+
+  <!-- Applications List -->
+  <div *ngIf="!loading() && !error()" class="applications-list">
+    <!-- Empty State -->
+    <div *ngIf="applications().length === 0" class="empty-state">
+      <div class="empty-content">
+        <span class="empty-icon">📋</span>
+        <h3>No applications found</h3>
+        <p>Start tracking your job applications to see them here.</p>
+        <a routerLink="/generate" class="btn btn-primary">
+          Add First Application
+        </a>
+      </div>
+    </div>
+
+    <!-- Applications Grid -->
+    <div *ngIf="applications().length > 0" class="applications-grid">
+      <div
+        *ngFor="let app of applications(); trackBy: trackByApplicationId"
+        class="application-card"
+      >
+        <!-- Card Header -->
+        <div class="card-header">
+          <div class="company-info">
+            <h3 class="company-name">{{ app.company || "Unknown Company" }}</h3>
+            <p class="job-title">{{ app.title || "No Title" }}</p>
+          </div>
+          <div class="card-actions">
+            <button
+              class="action-btn"
+              [routerLink]="['/applications', app.id]"
+              title="View Details"
+            >
+              👁️
+            </button>
+            <button
+              class="action-btn delete-btn"
+              (click)="deleteApplication(app.id)"
+              title="Delete Application"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Badge -->
+        <div class="status-section">
+          <span class="status-badge" [ngClass]="getStatusColor(app.status)">
+            <span class="status-icon">{{ getStatusIcon(app.status) }}</span>
+            {{ app.status }}
+          </span>
+        </div>
+
+        <!-- Application Details -->
+        <div class="card-details">
+          <div class="detail-item" *ngIf="getLocation(app)">
+            <span class="detail-label">📍</span>
+            <span class="detail-value">{{ getLocation(app) }}</span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">📅</span>
+            <span class="detail-value"
+              >Added {{ formatDate(app.createdAt) }}</span
+            >
+          </div>
+
+          <div class="detail-item" *ngIf="app.appliedAt">
+            <span class="detail-label">📧</span>
+            <span class="detail-value"
+              >Applied {{ formatDate(app.appliedAt) }}</span
+            >
+          </div>
+
+          <div class="detail-item" *ngIf="getHasNotes(app)">
+            <span class="detail-label">📝</span>
+            <span class="detail-value">Has notes</span>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card-footer">
+          <div class="quick-actions">
+            <button
+              class="quick-action-btn"
+              [routerLink]="['/applications', app.id, 'edit']"
+            >
+              ✏️ Edit
+            </button>
+            <button
+              class="quick-action-btn"
+              [routerLink]="['/applications', app.id, 'documents']"
+            >
+              📄 Docs
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="applications().length > 0" class="pagination-section">
+      <div class="pagination-info">
+        <p>
+          Showing {{ paginationInfo.start }} - {{ paginationInfo.end }} of
+          {{ pagination().total }} applications
+        </p>
+      </div>
+
+      <div class="pagination-controls">
+        <button
+          class="pagination-btn"
+          [disabled]="pagination().page <= 1"
+          (click)="goToPage(pagination().page - 1)"
+        >
+          ← Previous
+        </button>
+
+        <div class="page-numbers">
+          <button
+            *ngFor="let page of paginationInfo.pages"
+            class="page-btn"
+            [class.active]="page === pagination().page"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+        </div>
+
+        <button
+          class="pagination-btn"
+          [disabled]="pagination().page >= paginationInfo.totalPages"
+          (click)="goToPage(pagination().page + 1)"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

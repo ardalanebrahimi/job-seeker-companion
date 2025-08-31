@@ -10,5 +10,21 @@ export type ApplicationSummary = {
     status: ApplicationStatus;
     createdAt: string;
     appliedAt?: string | null;
+    /**
+     * Next upcoming reminder date (V2)
+     */
+    nextReminderAt?: string | null;
+    /**
+     * Whether this application has notes (V2)
+     */
+    hasNotes: boolean;
+    /**
+     * Primary coaching hint for tracker view (V2)
+     */
+    coachingHint?: string | null;
+    /**
+     * Job location (V2)
+     */
+    location?: string | null;
 };
 

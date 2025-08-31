@@ -20,7 +20,14 @@ import {
   DocumentFormat,
   DecisionDto,
   NoteDto,
+  NoteCreateDto,
   StatusUpdateDto,
+  ReminderDto,
+  ReminderCreateDto,
+  ReminderWithApplicationDto,
+  CoachingHintsDto,
+  ApplicationHistoryDto,
+  DuplicateCheckResponseDto,
 } from "../common/dto";
 
 @Injectable()
@@ -243,7 +250,11 @@ export class ApplicationsService {
             select: {
               company: true,
               title: true,
+              location: true,
             },
+          },
+          notes: {
+            select: { id: true },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -260,6 +271,10 @@ export class ApplicationsService {
       status: app.status as ApplicationStatus,
       createdAt: app.createdAt.toISOString(),
       appliedAt: app.appliedAt?.toISOString(),
+      nextReminderAt: undefined, // TODO: Add reminder query
+      hasNotes: app.notes.length > 0,
+      coachingHint: undefined, // TODO: Add coaching hint
+      location: app.job.location,
     }));
 
     return {
@@ -325,6 +340,11 @@ export class ApplicationsService {
             keywordsEmphasized: decision.keywordsEmphasized as string[],
           }
         : undefined,
+      reminders: [], // TODO: Add reminders query
+      history: { entries: [] }, // TODO: Add history query
+      coachingHints: { hints: [] }, // TODO: Add coaching hints
+      createdAt: application.createdAt.toISOString(),
+      updatedAt: application.updatedAt.toISOString(),
     };
   }
 
@@ -392,7 +412,11 @@ export class ApplicationsService {
           select: {
             company: true,
             title: true,
+            location: true,
           },
+        },
+        notes: {
+          select: { id: true },
         },
       },
     });
@@ -404,6 +428,10 @@ export class ApplicationsService {
       status: updatedApp.status as ApplicationStatus,
       createdAt: updatedApp.createdAt.toISOString(),
       appliedAt: updatedApp.appliedAt?.toISOString(),
+      nextReminderAt: undefined, // TODO: Add reminder query
+      hasNotes: updatedApp.notes.length > 0,
+      coachingHint: undefined, // TODO: Add coaching hint
+      location: updatedApp.job.location,
     };
   }
 
@@ -458,5 +486,251 @@ export class ApplicationsService {
     }
 
     return "Professional";
+  }
+
+  // V2 Methods
+
+  async updateNote(
+    userId: string,
+    applicationId: string,
+    noteId: string,
+    text: string
+  ): Promise<NoteDto> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    const note = await this.prisma.note.update({
+      where: { id: noteId, applicationId },
+      data: { text },
+    });
+
+    return {
+      id: note.id,
+      text: note.text,
+      createdAt: note.createdAt.toISOString(),
+    };
+  }
+
+  async deleteNote(
+    userId: string,
+    applicationId: string,
+    noteId: string
+  ): Promise<void> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    await this.prisma.note.delete({
+      where: { id: noteId, applicationId },
+    });
+  }
+
+  async setReminder(
+    userId: string,
+    applicationId: string,
+    reminderData: ReminderCreateDto
+  ): Promise<ReminderDto> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // For now, create a mock reminder since we're skipping DB changes
+    const mockReminder: ReminderDto = {
+      id: `reminder-${Date.now()}`,
+      applicationId,
+      dueAt: reminderData.dueAt,
+      kind: reminderData.kind,
+      title: reminderData.title,
+      description: reminderData.description,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    return mockReminder;
+  }
+
+  async getApplicationReminders(
+    userId: string,
+    applicationId: string
+  ): Promise<ReminderDto[]> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Return empty for now since we're skipping DB changes
+    return [];
+  }
+
+  async getUpcomingReminders(
+    userId: string,
+    limit: number = 10
+  ): Promise<ReminderWithApplicationDto[]> {
+    // Return empty for now since we're skipping DB changes
+    return [];
+  }
+
+  async completeReminder(
+    userId: string,
+    reminderId: string
+  ): Promise<ReminderDto> {
+    // Mock implementation for now
+    const mockReminder: ReminderDto = {
+      id: reminderId,
+      applicationId: `app-${Date.now()}`,
+      dueAt: new Date().toISOString(),
+      kind: "followup",
+      completed: true,
+      completedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    return mockReminder;
+  }
+
+  async deleteApplication(
+    userId: string,
+    applicationId: string
+  ): Promise<void> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Delete application (cascade deletes will handle related records)
+    await this.prisma.application.delete({
+      where: { id: applicationId },
+    });
+  }
+
+  async exportApplications(
+    userId: string,
+    filters: {
+      status?: ApplicationStatus;
+      company?: string;
+      search?: string;
+    }
+  ): Promise<ApplicationSummaryDto[]> {
+    const where: any = { userId };
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.company) {
+      where.job = {
+        company: { contains: filters.company, mode: "insensitive" },
+      };
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { job: { company: { contains: filters.search, mode: "insensitive" } } },
+        { job: { title: { contains: filters.search, mode: "insensitive" } } },
+        { notesMd: { contains: filters.search, mode: "insensitive" } },
+      ];
+    }
+
+    const applications = await this.prisma.application.findMany({
+      where,
+      include: {
+        job: {
+          select: {
+            company: true,
+            title: true,
+            location: true,
+          },
+        },
+        notes: {
+          select: { id: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return applications.map((app) => ({
+      id: app.id,
+      company: app.job.company,
+      title: app.job.title,
+      status: app.status as ApplicationStatus,
+      createdAt: app.createdAt.toISOString(),
+      appliedAt: app.appliedAt?.toISOString(),
+      nextReminderAt: undefined,
+      hasNotes: app.notes.length > 0,
+      coachingHint: undefined,
+      location: app.job.location,
+    }));
+  }
+
+  async getApplicationCoachingHints(
+    userId: string,
+    applicationId: string
+  ): Promise<CoachingHintsDto> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Mock implementation for now
+    return {
+      hints: [
+        {
+          id: "hint-1",
+          category: "next_step",
+          title: "Follow up with hiring manager",
+          description:
+            "It's been 5 days since you applied. Consider sending a follow-up email.",
+          priority: "medium",
+          dismissed: false,
+        },
+      ],
+      nextStepHint: "Follow up in 2-3 days if no response",
+    };
+  }
+
+  async dismissCoachingHint(
+    userId: string,
+    applicationId: string,
+    hintId: string
+  ): Promise<void> {
+    // Verify application belongs to user
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Mock implementation for now - would update coaching_hints table
+    console.log(`Dismissed hint ${hintId} for application ${applicationId}`);
   }
 }

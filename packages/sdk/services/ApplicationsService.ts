@@ -10,32 +10,50 @@ import type { ApplicationStatus } from '../models/ApplicationStatus';
 import type { ApplicationSummary } from '../models/ApplicationSummary';
 import type { Note } from '../models/Note';
 import type { NoteCreate } from '../models/NoteCreate';
+import type { Reminder } from '../models/Reminder';
+import type { ReminderCreate } from '../models/ReminderCreate';
+import type { ReminderWithApplication } from '../models/ReminderWithApplication';
 import type { StatusUpdate } from '../models/StatusUpdate';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class ApplicationsService {
     /**
-     * List applications (summary)
-     * @returns ApplicationList Paged application summaries
+     * List applications with filtering and search (V2)
+     * @returns ApplicationList List of applications
      * @throws ApiError
      */
     public static listApplications({
-        status,
         page = 1,
         pageSize = 20,
+        status,
+        company,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
     }: {
-        status?: ApplicationStatus,
         page?: number,
         pageSize?: number,
+        status?: ApplicationStatus,
+        company?: string,
+        /**
+         * Search in company, title, and notes
+         */
+        search?: string,
+        sortBy?: 'createdAt' | 'appliedAt' | 'status' | 'company',
+        sortOrder?: 'asc' | 'desc',
     }): CancelablePromise<ApplicationList> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/applications',
             query: {
-                'status': status,
                 'page': page,
                 'pageSize': pageSize,
+                'status': status,
+                'company': company,
+                'search': search,
+                'sortBy': sortBy,
+                'sortOrder': sortOrder,
             },
             errors: {
                 401: `Unauthorized`,
@@ -61,6 +79,36 @@ export class ApplicationsService {
                 400: `Bad request`,
                 401: `Unauthorized`,
                 404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Export applications list (V2)
+     * @returns ApplicationSummary Exported applications data
+     * @throws ApiError
+     */
+    public static exportApplications({
+        format = 'csv',
+        status,
+        company,
+        search,
+    }: {
+        format?: 'csv' | 'json',
+        status?: ApplicationStatus,
+        company?: string,
+        search?: string,
+    }): CancelablePromise<Array<ApplicationSummary>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/export',
+            query: {
+                'format': format,
+                'status': status,
+                'company': company,
+                'search': search,
+            },
+            errors: {
+                401: `Unauthorized`,
             },
         });
     }
@@ -108,6 +156,132 @@ export class ApplicationsService {
             mediaType: 'application/json',
             errors: {
                 400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Update a note on an application (V2)
+     * @returns Note Note updated
+     * @throws ApiError
+     */
+    public static updateApplicationNote({
+        id,
+        noteId,
+        requestBody,
+    }: {
+        id: string,
+        noteId: string,
+        requestBody: NoteCreate,
+    }): CancelablePromise<Note> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/applications/{id}/notes/{noteId}',
+            path: {
+                'id': id,
+                'noteId': noteId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Delete a note from an application (V2)
+     * @returns void
+     * @throws ApiError
+     */
+    public static deleteApplicationNote({
+        id,
+        noteId,
+    }: {
+        id: string,
+        noteId: string,
+    }): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/applications/{id}/notes/{noteId}',
+            path: {
+                'id': id,
+                'noteId': noteId,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Set a reminder for an application (V2)
+     * @returns Reminder Reminder set
+     * @throws ApiError
+     */
+    public static setApplicationReminder({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: ReminderCreate,
+    }): CancelablePromise<Reminder> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/applications/{id}/reminders',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get reminders for an application (V2)
+     * @returns Reminder Application reminders
+     * @throws ApiError
+     */
+    public static getApplicationReminders({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<Array<Reminder>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/reminders',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Delete an application and all linked documents (V2)
+     * @returns void
+     * @throws ApiError
+     */
+    public static deleteApplication({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/applications/{id}/delete',
+            path: {
+                'id': id,
+            },
+            errors: {
                 401: `Unauthorized`,
                 404: `Not found`,
             },
@@ -172,6 +346,49 @@ export class ApplicationsService {
             mediaType: 'application/json',
             errors: {
                 400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get upcoming reminders across all applications (V2)
+     * @returns ReminderWithApplication Upcoming reminders
+     * @throws ApiError
+     */
+    public static getUpcomingReminders({
+        limit = 10,
+    }: {
+        limit?: number,
+    }): CancelablePromise<Array<ReminderWithApplication>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/reminders',
+            query: {
+                'limit': limit,
+            },
+            errors: {
+                401: `Unauthorized`,
+            },
+        });
+    }
+    /**
+     * Mark a reminder as completed (V2)
+     * @returns Reminder Reminder marked as completed
+     * @throws ApiError
+     */
+    public static completeReminder({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<Reminder> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/reminders/{id}/complete',
+            path: {
+                'id': id,
+            },
+            errors: {
                 401: `Unauthorized`,
                 404: `Not found`,
             },

@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { DuplicateCheckResponse } from '../models/DuplicateCheckResponse';
 import type { JobDetail } from '../models/JobDetail';
 import type { JobIngestRequest } from '../models/JobIngestRequest';
 import type { JobIngestResponse } from '../models/JobIngestResponse';
@@ -49,6 +50,27 @@ export class JobsService {
             errors: {
                 401: `Unauthorized`,
                 404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Check if a job is a duplicate of an existing one (V2)
+     * @returns DuplicateCheckResponse Duplicate check result
+     * @throws ApiError
+     */
+    public static checkJobDuplicate({
+        requestBody,
+    }: {
+        requestBody: JobIngestRequest,
+    }): CancelablePromise<DuplicateCheckResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/jobs/check-duplicate',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
             },
         });
     }

@@ -1,5 +1,9 @@
 import { Module } from "@nestjs/common";
-import { ApplicationsController } from "./applications.controller";
+import {
+  ApplicationsController,
+  RemindersController,
+  CoachController,
+} from "./applications.controller";
 import { ApplicationsService } from "./applications.service";
 import { PrismaModule } from "../prisma/prisma.module";
 import { StorageModule } from "../storage/storage.module";
@@ -8,7 +12,7 @@ import { JobsModule } from "../jobs/jobs.module";
 
 @Module({
   imports: [PrismaModule, StorageModule, CvModule, JobsModule],
-  controllers: [ApplicationsController],
+  controllers: [ApplicationsController, RemindersController, CoachController],
   providers: [ApplicationsService],
   exports: [ApplicationsService],
 })

@@ -318,6 +318,18 @@ export class ApplicationSummaryDto {
 
   @ApiPropertyOptional()
   appliedAt?: string;
+
+  @ApiPropertyOptional()
+  nextReminderAt?: string;
+
+  @ApiProperty()
+  hasNotes: boolean;
+
+  @ApiPropertyOptional()
+  coachingHint?: string;
+
+  @ApiPropertyOptional()
+  location?: string;
 }
 
 export class ApplicationListDto {
@@ -345,6 +357,177 @@ export class NoteDto {
   createdAt: string;
 }
 
+// --- V2 DTOs ---
+
+export class DuplicateCheckResponseDto {
+  @ApiProperty()
+  isDuplicate: boolean;
+
+  @ApiProperty()
+  similarityScore: number;
+
+  @ApiPropertyOptional()
+  existingJobId?: string;
+
+  @ApiPropertyOptional()
+  existingApplicationId?: string;
+
+  @ApiPropertyOptional()
+  reason?: string;
+
+  @ApiProperty()
+  canOverride: boolean;
+}
+
+export class ReminderCreateDto {
+  @ApiProperty()
+  @IsString()
+  dueAt: string;
+
+  @ApiProperty({ enum: ["followup", "interview", "task"] })
+  @IsEnum(["followup", "interview", "task"])
+  kind: "followup" | "interview" | "task";
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
+export class ReminderDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  dueAt: string;
+
+  @ApiProperty({ enum: ["followup", "interview", "task"] })
+  kind: "followup" | "interview" | "task";
+
+  @ApiPropertyOptional()
+  title?: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiProperty()
+  completed: boolean;
+
+  @ApiPropertyOptional()
+  completedAt?: string;
+
+  @ApiProperty()
+  createdAt: string;
+}
+
+export class ReminderWithApplicationDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  dueAt: string;
+
+  @ApiProperty({ enum: ["followup", "interview", "task"] })
+  kind: "followup" | "interview" | "task";
+
+  @ApiPropertyOptional()
+  title?: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+
+  @ApiProperty()
+  completed: boolean;
+
+  @ApiProperty()
+  application: {
+    id: string;
+    company?: string;
+    title?: string;
+    status: ApplicationStatus;
+  };
+}
+
+export class CoachingHintDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({
+    enum: ["next_step", "follow_up", "improvement", "preparation"],
+  })
+  category: "next_step" | "follow_up" | "improvement" | "preparation";
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  description: string;
+
+  @ApiProperty({ enum: ["high", "medium", "low"] })
+  priority: "high" | "medium" | "low";
+
+  @ApiProperty()
+  dismissed: boolean;
+}
+
+export class CoachingHintsDto {
+  @ApiProperty({ type: [CoachingHintDto] })
+  hints: CoachingHintDto[];
+
+  @ApiPropertyOptional()
+  nextStepHint?: string;
+}
+
+export class ApplicationHistoryEntryDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  timestamp: string;
+
+  @ApiProperty({
+    enum: [
+      "status_change",
+      "note_added",
+      "note_updated",
+      "note_deleted",
+      "reminder_set",
+      "reminder_completed",
+      "document_generated",
+    ],
+  })
+  type:
+    | "status_change"
+    | "note_added"
+    | "note_updated"
+    | "note_deleted"
+    | "reminder_set"
+    | "reminder_completed"
+    | "document_generated";
+
+  @ApiProperty()
+  description: string;
+
+  @ApiPropertyOptional()
+  metadata?: Record<string, any>;
+}
+
+export class ApplicationHistoryDto {
+  @ApiProperty({ type: [ApplicationHistoryEntryDto] })
+  entries: ApplicationHistoryEntryDto[];
+}
+
 export class NoteCreateDto {
   @ApiProperty()
   @IsString()
@@ -369,6 +552,21 @@ export class ApplicationDetailDto {
 
   @ApiPropertyOptional()
   decision?: DecisionDto;
+
+  @ApiPropertyOptional({ type: [ReminderDto] })
+  reminders?: ReminderDto[];
+
+  @ApiPropertyOptional()
+  history?: ApplicationHistoryDto;
+
+  @ApiPropertyOptional()
+  coachingHints?: CoachingHintsDto;
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty()
+  updatedAt: string;
 }
 
 export class StatusUpdateDto {

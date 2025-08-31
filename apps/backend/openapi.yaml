@@ -117,32 +117,74 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /jobs/check-duplicate:
+    post:
+      tags: [Jobs]
+      summary: Check if a job is a duplicate of an existing one (V2)
+      operationId: checkJobDuplicate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobIngestRequest"
+      responses:
+        "200":
+          description: Duplicate check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuplicateCheckResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /applications:
     get:
       tags: [Applications]
-      summary: List applications (summary)
+      summary: List applications with filtering and search (V2)
       operationId: listApplications
       parameters:
-        - name: status
-          in: query
-          schema:
-            $ref: "#/components/schemas/ApplicationStatus"
         - name: page
           in: query
           schema:
             type: integer
-            minimum: 1
             default: 1
         - name: pageSize
           in: query
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
             default: 20
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ApplicationStatus"
+        - name: company
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search in company, title, and notes
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, appliedAt, status, company]
+            default: createdAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
       responses:
         "200":
-          description: Paged application summaries
+          description: List of applications
           content:
             application/json:
               schema:
@@ -174,6 +216,45 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+
+  /applications/export:
+    get:
+      tags: [Applications]
+      summary: Export applications list (V2)
+      operationId: exportApplications
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ApplicationStatus"
+        - name: company
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Exported applications data
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApplicationSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /applications/{id}:
     get:
@@ -226,6 +307,144 @@ paths:
                 $ref: "#/components/schemas/Note"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/notes/{noteId}:
+    put:
+      tags: [Applications]
+      summary: Update a note on an application (V2)
+      operationId: updateApplicationNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteCreate"
+      responses:
+        "200":
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Applications]
+      summary: Delete a note from an application (V2)
+      operationId: deleteApplicationNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: Note deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/reminders:
+    post:
+      tags: [Applications]
+      summary: Set a reminder for an application (V2)
+      operationId: setApplicationReminder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReminderCreate"
+      responses:
+        "201":
+          description: Reminder set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    get:
+      tags: [Applications]
+      summary: Get reminders for an application (V2)
+      operationId: getApplicationReminders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Application reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/delete:
+    delete:
+      tags: [Applications]
+      summary: Delete an application and all linked documents (V2)
+      operationId: deleteApplication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "204":
+          description: Application deleted
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -311,6 +530,54 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /reminders:
+    get:
+      tags: [Applications]
+      summary: Get upcoming reminders across all applications (V2)
+      operationId: getUpcomingReminders
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        "200":
+          description: Upcoming reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReminderWithApplication"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /reminders/{id}/complete:
+    post:
+      tags: [Applications]
+      summary: Mark a reminder as completed (V2)
+      operationId: completeReminder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Reminder marked as completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /coach/nudges:
     post:
       tags: [Coach]
@@ -340,6 +607,60 @@ paths:
                 $ref: "#/components/schemas/CoachingNudges"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /coach/hints/{applicationId}:
+    get:
+      tags: [Coach]
+      summary: Get coaching hints for an application (V2)
+      operationId: getApplicationCoachingHints
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Coaching hints for this application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachingHints"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /coach/hints/{applicationId}/dismiss:
+    post:
+      tags: [Coach]
+      summary: Dismiss a coaching hint for an application (V2)
+      operationId: dismissCoachingHint
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hintId]
+              properties:
+                hintId:
+                  type: string
+      responses:
+        "204":
+          description: Hint dismissed
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -611,7 +932,23 @@ components:
           type: string
           format: date-time
           nullable: true
-      required: [id, status, createdAt]
+        nextReminderAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Next upcoming reminder date (V2)
+        hasNotes:
+          type: boolean
+          description: Whether this application has notes (V2)
+        coachingHint:
+          type: string
+          nullable: true
+          description: Primary coaching hint for tracker view (V2)
+        location:
+          type: string
+          nullable: true
+          description: Job location (V2)
+      required: [id, status, createdAt, hasNotes]
 
     ApplicationDetail:
       type: object
@@ -633,7 +970,24 @@ components:
             $ref: "#/components/schemas/GeneratedDoc"
         decision:
           $ref: "#/components/schemas/Decision"
-      required: [id, status]
+        reminders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reminder"
+          description: Active reminders for this application (V2)
+        history:
+          $ref: "#/components/schemas/ApplicationHistory"
+          description: History log of all changes (V2)
+        coachingHints:
+          $ref: "#/components/schemas/CoachingHints"
+          description: Current coaching hints (V2)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, status, createdAt]
 
     Decision:
       type: object
@@ -776,3 +1130,173 @@ components:
               title: { type: string }
               description: { type: string }
               etaDays: { type: integer }
+
+    # --- V2 Schemas ---
+    DuplicateCheckResponse:
+      type: object
+      properties:
+        isDuplicate:
+          type: boolean
+        similarityScore:
+          type: number
+          format: float
+          description: Similarity score (0-1)
+        existingJobId:
+          type: string
+          format: uuid
+          nullable: true
+        existingApplicationId:
+          type: string
+          format: uuid
+          nullable: true
+        reason:
+          type: string
+          description: Explanation of why it's considered a duplicate
+        canOverride:
+          type: boolean
+          description: Whether user can override and save as new
+      required: [isDuplicate, canOverride]
+
+    ReminderCreate:
+      type: object
+      required: [dueAt, kind]
+      properties:
+        dueAt:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [followup, interview, task]
+        title:
+          type: string
+        description:
+          type: string
+
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        dueAt:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [followup, interview, task]
+        title:
+          type: string
+        description:
+          type: string
+        completed:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, applicationId, dueAt, kind, completed, createdAt]
+
+    ReminderWithApplication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        dueAt:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [followup, interview, task]
+        title:
+          type: string
+        description:
+          type: string
+        completed:
+          type: boolean
+        application:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            company:
+              type: string
+            title:
+              type: string
+            status:
+              $ref: "#/components/schemas/ApplicationStatus"
+          required: [id, status]
+      required: [id, applicationId, dueAt, kind, completed, application]
+
+    CoachingHints:
+      type: object
+      properties:
+        hints:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              category:
+                type: string
+                enum: [next_step, follow_up, improvement, preparation]
+              title:
+                type: string
+              description:
+                type: string
+              priority:
+                type: string
+                enum: [high, medium, low]
+              dismissed:
+                type: boolean
+            required: [id, category, title, description, priority, dismissed]
+        nextStepHint:
+          type: string
+          nullable: true
+          description: Primary next step recommendation
+      required: [hints]
+
+    ApplicationHistory:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              timestamp:
+                type: string
+                format: date-time
+              type:
+                type: string
+                enum:
+                  [
+                    status_change,
+                    note_added,
+                    note_updated,
+                    note_deleted,
+                    reminder_set,
+                    reminder_completed,
+                    document_generated,
+                  ]
+              description:
+                type: string
+              metadata:
+                type: object
+                additionalProperties: true
+            required: [id, timestamp, type, description]
+      required: [entries]

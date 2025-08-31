@@ -15,7 +15,10 @@ import { RouterOutlet, RouterLink } from "@angular/router";
             <a routerLink="/generate" class="nav-link">Generate Application</a>
             <a routerLink="/v1-generator" class="nav-link">V1 Generator ✨</a>
             <a routerLink="/applications" class="nav-link"
-              >Application Tracker</a
+              >Application Tracker V2</a
+            >
+            <a routerLink="/applications/v1" class="nav-link"
+              >Tracker V1 (Legacy)</a
             >
           </nav>
         </div>
