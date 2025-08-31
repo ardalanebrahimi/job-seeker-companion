@@ -181,7 +181,11 @@ export class ApplicationGenerateRequestDto {
   @IsUUID()
   jobId: string;
 
-  @ApiPropertyOptional({ minimum: 0, maximum: 2 })
+  @ApiPropertyOptional({
+    minimum: 0,
+    maximum: 2,
+    description: "Reality Index (V1)",
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -192,6 +196,19 @@ export class ApplicationGenerateRequestDto {
   @IsOptional()
   @IsString()
   language?: string;
+
+  @ApiPropertyOptional({ description: "Optional persona override (V1)" })
+  @IsOptional()
+  @IsString()
+  personaHint?: string;
+
+  @ApiPropertyOptional({
+    enum: ["concise", "balanced", "detailed"],
+    description: "Optional style preference (V1)",
+  })
+  @IsOptional()
+  @IsEnum(["concise", "balanced", "detailed"])
+  stylePreference?: "concise" | "balanced" | "detailed";
 }
 
 export class GeneratedDocDto {
@@ -219,17 +236,57 @@ export class GeneratedDocDto {
 }
 
 export class DecisionDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: "Auto-decided persona (V1)" })
   persona?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: "Applied Reality Index (V1)" })
   realityIndex?: number;
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiPropertyOptional({
+    type: [String],
+    description: "Top signals for persona choice (V1)",
+  })
   signals?: string[];
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiPropertyOptional({
+    type: [String],
+    description: "JD keywords emphasized (V1)",
+  })
   keywordsEmphasized?: string[];
+
+  @ApiPropertyOptional({ description: "Style choice rationale (V1)" })
+  styleRationale?: string;
+
+  @ApiPropertyOptional({
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        label: { type: "string" },
+        active: { type: "boolean" },
+      },
+    },
+    description: "Available emphasis switches (V1)",
+  })
+  switches?: Array<{ label: string; active: boolean }>;
+
+  @ApiPropertyOptional({
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        claimText: { type: "string" },
+        sourceFactId: { type: "string" },
+        factType: { type: "string" },
+      },
+    },
+    description: "Claim provenance links (V1)",
+  })
+  provenanceLinks?: Array<{
+    claimText: string;
+    sourceFactId: string;
+    factType: string;
+  }>;
 }
 
 export class ApplicationGenerateResponseDto {
@@ -344,4 +401,46 @@ export class GapRoadmapDto {
 
   @ApiProperty({ type: [GapActionDto] })
   actions: GapActionDto[];
+}
+
+export class CoachingNudgeDto {
+  @ApiProperty({ enum: ["emphasize", "trim", "gap", "improvement"] })
+  category: "emphasize" | "trim" | "gap" | "improvement";
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  description: string;
+
+  @ApiProperty({ enum: ["high", "medium", "low"] })
+  priority: "high" | "medium" | "low";
+}
+
+export class ImmediateActionDto {
+  @ApiProperty()
+  action: string;
+
+  @ApiProperty()
+  etaDays: number;
+}
+
+export class CoachingNudgesDto {
+  @ApiProperty({
+    type: [CoachingNudgeDto],
+    description: "3-5 actionable coaching tips (V1)",
+  })
+  nudges: CoachingNudgeDto[];
+
+  @ApiProperty({
+    type: [ImmediateActionDto],
+    description: "Things to address this week",
+  })
+  immediateActions: ImmediateActionDto[];
+
+  @ApiProperty({
+    type: [String],
+    description: "Key themes from JD that advice references",
+  })
+  jdThemes: string[];
 }

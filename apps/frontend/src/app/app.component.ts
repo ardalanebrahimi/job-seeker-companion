@@ -13,6 +13,7 @@ import { RouterOutlet, RouterLink } from "@angular/router";
           <nav>
             <a routerLink="/profile/cv" class="nav-link">CV Management</a>
             <a routerLink="/generate" class="nav-link">Generate Application</a>
+            <a routerLink="/v1-generator" class="nav-link">V1 Generator ✨</a>
             <a routerLink="/applications" class="nav-link"
               >Application Tracker</a
             >

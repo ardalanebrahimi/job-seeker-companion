@@ -28,7 +28,7 @@ export class JobsService {
 
     if (request.url) {
       // Fetch content from URL
-      const response = await axios.get(request.url, {
+      const response = await axios.get<string>(request.url, {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",

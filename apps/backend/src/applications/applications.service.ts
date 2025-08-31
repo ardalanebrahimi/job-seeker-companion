@@ -4,6 +4,11 @@ import { StorageService } from "../storage/storage.service";
 import { CvService } from "../cv/cv.service";
 import { JobsService } from "../jobs/jobs.service";
 import {
+  AgentOrchestrator,
+  AgentContext,
+  V1GenerationRequest,
+} from "../agents";
+import {
   ApplicationGenerateRequestDto,
   ApplicationGenerateResponseDto,
   ApplicationListDto,
@@ -18,22 +23,23 @@ import {
   StatusUpdateDto,
 } from "../common/dto";
 
-interface GenerationContext {
-  cvPreview: any;
-  jobDetail: any;
-  realityIndex: number;
-  persona?: string;
-}
-
 @Injectable()
 export class ApplicationsService {
+  private agentOrchestrator: AgentOrchestrator;
+
   constructor(
     private prisma: PrismaService,
     private storage: StorageService,
     private cvService: CvService,
     private jobsService: JobsService
-  ) {}
+  ) {
+    this.agentOrchestrator = new AgentOrchestrator();
+  }
 
+  /**
+   * Generate application using V1 agent orchestration
+   * Implements auto-decision, Reality Index, and explainability
+   */
   async generateApplication(
     userId: string,
     request: ApplicationGenerateRequestDto
@@ -42,85 +48,179 @@ export class ApplicationsService {
     const cvPreview = await this.cvService.getCvPreview(userId);
     const jobDetail = await this.jobsService.getJob(request.jobId);
 
-    // Determine reality index (V0: simple default, V1: agent decides)
-    const realityIndex = request.realityIndex ?? 1; // Default to balanced
-
-    // Generate context for document creation
-    const context: GenerationContext = {
-      cvPreview,
+    // Build agent context
+    const context: AgentContext = {
+      userId,
+      jobId: request.jobId,
+      cvFacts: cvPreview,
       jobDetail,
-      realityIndex,
-      persona: this.inferPersona(cvPreview, jobDetail),
+      language: request.language,
     };
 
-    // Create application record
+    // Build V1 generation request
+    const v1Request: V1GenerationRequest = {
+      jobId: request.jobId,
+      realityIndex: request.realityIndex,
+      language: request.language,
+      personaHint: request.personaHint,
+      stylePreference: request.stylePreference,
+    };
+
+    // Execute V1 agent orchestration
+    const orchestrationResult =
+      await this.agentOrchestrator.generateApplication(context, v1Request);
+
+    if (!orchestrationResult.success) {
+      throw new Error(
+        `Agent orchestration failed: ${orchestrationResult.error?.message}`
+      );
+    }
+
+    const result = orchestrationResult.data;
+
+    // Store application in database (agent already created temp ID)
     const application = await this.prisma.application.create({
       data: {
+        id: result.applicationId,
         userId,
         jobId: request.jobId,
         status: ApplicationStatus.Found,
       },
     });
 
-    // Generate documents
-    const docs: GeneratedDocDto[] = [];
-
-    // Generate CV
-    const cvContent = await this.generateTailoredCv(context);
-    const cvUri = await this.saveDocument(
-      application.id,
-      DocumentKind.cv,
-      DocumentFormat.md,
-      cvContent,
-      request.language
-    );
-    docs.push({
-      kind: DocumentKind.cv,
-      format: DocumentFormat.md,
-      uri: cvUri,
-      variantLabel: "balanced",
-      language: request.language,
-    });
-
-    // Generate Cover Letter
-    const coverContent = await this.generateTailoredCoverLetter(context);
-    const coverUri = await this.saveDocument(
-      application.id,
-      DocumentKind.cover,
-      DocumentFormat.md,
-      coverContent,
-      request.language
-    );
-    docs.push({
-      kind: DocumentKind.cover,
-      format: DocumentFormat.md,
-      uri: coverUri,
-      variantLabel: "balanced",
-      language: request.language,
-    });
-
-    // Create decision log
-    const decision: DecisionDto = {
-      persona: context.persona,
-      realityIndex: context.realityIndex,
-      signals: this.getMatchSignals(context),
-      keywordsEmphasized: this.getEmphasizedKeywords(context),
-    };
-
+    // Store decision log with V1 data
     await this.prisma.decisionLog.create({
       data: {
         applicationId: application.id,
-        personaLabel: decision.persona,
-        realityIndex: decision.realityIndex,
-        signalsJson: decision.signals,
-        keywordsEmphasized: decision.keywordsEmphasized,
+        personaLabel: result.decision.persona,
+        realityIndex: result.decision.realityIndex,
+        signalsJson: result.decision.signals,
+        keywordsEmphasized: result.decision.keywordsEmphasized,
+        // TODO: Add V1 fields when Prisma client is regenerated
+        // switchesJson: result.decision.switches,
+        // provenanceLinksJson: result.decision.provenanceLinks,
+      },
+    });
+
+    // Store document records
+    for (const doc of result.docs) {
+      await this.prisma.applicationDoc.create({
+        data: {
+          applicationId: application.id,
+          kind: doc.kind as DocumentKind,
+          format: doc.format as DocumentFormat,
+          blobUri: doc.uri,
+          variantLabel: doc.variantLabel,
+          language: doc.language,
+        },
+      });
+    }
+
+    return {
+      applicationId: result.applicationId,
+      docs: result.docs.map((doc) => ({
+        kind: doc.kind as DocumentKind,
+        format: doc.format as DocumentFormat,
+        uri: doc.uri,
+        variantLabel: doc.variantLabel,
+        language: doc.language,
+      })),
+      decision: {
+        persona: result.decision.persona,
+        realityIndex: result.decision.realityIndex,
+        signals: result.decision.signals,
+        keywordsEmphasized: result.decision.keywordsEmphasized,
+        styleRationale: result.decision.styleRationale,
+        switches: result.decision.switches,
+        provenanceLinks: result.decision.provenanceLinks,
+      },
+    };
+  }
+
+  /**
+   * Regenerate application with modified switches (V1)
+   */
+  async regenerateApplication(
+    userId: string,
+    applicationId: string,
+    switches: Array<{ label: string; active: boolean }>,
+    realityIndex?: number,
+    stylePreference?: "concise" | "balanced" | "detailed"
+  ): Promise<ApplicationGenerateResponseDto> {
+    // Verify application ownership
+    const application = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Get CV data
+    const cvPreview = await this.cvService.getCvPreview(userId);
+    const jobDetail = await this.jobsService.getJob(application.jobId);
+
+    // Build agent context
+    const context: AgentContext = {
+      userId,
+      jobId: application.jobId,
+      applicationId,
+      cvFacts: cvPreview,
+      jobDetail,
+    };
+
+    // Execute regeneration
+    const orchestrationResult =
+      await this.agentOrchestrator.regenerateWithSwitches(
+        context,
+        applicationId,
+        switches,
+        realityIndex,
+        stylePreference
+      );
+
+    if (!orchestrationResult.success) {
+      throw new Error(
+        `Regeneration failed: ${orchestrationResult.error?.message}`
+      );
+    }
+
+    const result = orchestrationResult.data;
+
+    // Update decision log
+    await this.prisma.decisionLog.create({
+      data: {
+        applicationId: applicationId,
+        personaLabel: result.decision.persona,
+        realityIndex: result.decision.realityIndex,
+        signalsJson: result.decision.signals,
+        keywordsEmphasized: result.decision.keywordsEmphasized,
+        // TODO: Add V1 fields when Prisma client is regenerated
+        // styleRationale: result.decision.styleRationale,
+        // switchesJson: result.decision.switches,
+        // provenanceLinksJson: result.decision.provenanceLinks,
       },
     });
 
     return {
-      applicationId: application.id,
-      docs,
-      decision,
+      applicationId: result.applicationId,
+      docs: result.docs.map((doc) => ({
+        kind: doc.kind as DocumentKind,
+        format: doc.format as DocumentFormat,
+        uri: doc.uri,
+        variantLabel: doc.variantLabel,
+        language: doc.language,
+      })),
+      decision: {
+        persona: result.decision.persona,
+        realityIndex: result.decision.realityIndex,
+        signals: result.decision.signals,
+        keywordsEmphasized: result.decision.keywordsEmphasized,
+        styleRationale: result.decision.styleRationale,
+        switches: result.decision.switches,
+        provenanceLinks: result.decision.provenanceLinks,
+      },
     };
   }
 
@@ -358,175 +458,5 @@ export class ApplicationsService {
     }
 
     return "Professional";
-  }
-
-  private getMatchSignals(context: GenerationContext): string[] {
-    const signals: string[] = [];
-    const cvSkills = context.cvPreview.skills || [];
-    const jobSkills = context.jobDetail.jdStruct?.skills || [];
-
-    // Find matching skills
-    const matchingSkills = cvSkills.filter((skill: string) =>
-      jobSkills.some(
-        (jobSkill: string) =>
-          jobSkill.toLowerCase().includes(skill.toLowerCase()) ||
-          skill.toLowerCase().includes(jobSkill.toLowerCase())
-      )
-    );
-
-    if (matchingSkills.length > 0) {
-      signals.push(
-        `${matchingSkills.length} matching skills: ${matchingSkills.slice(0, 3).join(", ")}`
-      );
-    }
-
-    // Check experience relevance
-    const experience = context.cvPreview.experience || [];
-    const relevantExp = experience.filter((exp: any) =>
-      exp.title
-        ?.toLowerCase()
-        .includes(context.jobDetail.title?.toLowerCase().split(" ")[0] || "")
-    );
-
-    if (relevantExp.length > 0) {
-      signals.push(`Relevant experience in similar roles`);
-    }
-
-    return signals;
-  }
-
-  private getEmphasizedKeywords(context: GenerationContext): string[] {
-    const jobSkills = context.jobDetail.jdStruct?.skills || [];
-    const cvSkills = context.cvPreview.skills || [];
-
-    // Return matching skills that should be emphasized
-    return jobSkills
-      .filter((skill: string) =>
-        cvSkills.some(
-          (cvSkill: string) =>
-            cvSkill.toLowerCase().includes(skill.toLowerCase()) ||
-            skill.toLowerCase().includes(cvSkill.toLowerCase())
-        )
-      )
-      .slice(0, 5);
-  }
-
-  private async generateTailoredCv(
-    context: GenerationContext
-  ): Promise<string> {
-    // V0: Simple template-based generation
-    // V1: Will use LLM for sophisticated tailoring
-
-    const { cvPreview, jobDetail, realityIndex, persona } = context;
-
-    let markdown = `# ${cvPreview.summary || "Professional CV"}\n\n`;
-
-    // Add emphasis based on job requirements
-    if (jobDetail.jdStruct?.skills?.length > 0) {
-      markdown += `## Key Skills\n\n`;
-      const relevantSkills =
-        cvPreview.skills?.filter((skill: string) =>
-          jobDetail.jdStruct.skills.some(
-            (jobSkill: string) =>
-              jobSkill.toLowerCase().includes(skill.toLowerCase()) ||
-              skill.toLowerCase().includes(jobSkill.toLowerCase())
-          )
-        ) || [];
-
-      const otherSkills =
-        cvPreview.skills?.filter(
-          (skill: string) => !relevantSkills.includes(skill)
-        ) || [];
-
-      // Emphasize relevant skills first
-      if (relevantSkills.length > 0) {
-        markdown +=
-          relevantSkills.map((skill) => `- **${skill}**`).join("\n") + "\n";
-      }
-      if (otherSkills.length > 0) {
-        markdown += otherSkills.map((skill) => `- ${skill}`).join("\n") + "\n";
-      }
-      markdown += "\n";
-    }
-
-    // Experience section
-    if (cvPreview.experience?.length > 0) {
-      markdown += `## Professional Experience\n\n`;
-      for (const exp of cvPreview.experience) {
-        markdown += `### ${exp.title} at ${exp.company}\n`;
-        if (exp.startDate || exp.endDate) {
-          markdown += `*${exp.startDate || ""} - ${exp.endDate || "Present"}*\n\n`;
-        }
-        if (exp.bullets?.length > 0) {
-          markdown +=
-            exp.bullets.map((bullet: string) => `- ${bullet}`).join("\n") +
-            "\n";
-        }
-        markdown += "\n";
-      }
-    }
-
-    // Education section
-    if (cvPreview.education?.length > 0) {
-      markdown += `## Education\n\n`;
-      for (const edu of cvPreview.education) {
-        markdown += `### ${edu.degree} - ${edu.institution}\n`;
-        if (edu.year) {
-          markdown += `*${edu.year}*\n`;
-        }
-        markdown += "\n";
-      }
-    }
-
-    return markdown;
-  }
-
-  private async generateTailoredCoverLetter(
-    context: GenerationContext
-  ): Promise<string> {
-    // V0: Simple template-based generation
-    // V1: Will use LLM for sophisticated personalization
-
-    const { cvPreview, jobDetail, persona } = context;
-
-    const company = jobDetail.company || "the company";
-    const position = jobDetail.title || "this position";
-
-    let markdown = `# Cover Letter\n\n`;
-    markdown += `Dear Hiring Manager,\n\n`;
-
-    // Opening paragraph
-    markdown += `I am writing to express my strong interest in the ${position} position at ${company}. `;
-    markdown += `With my background as a ${persona?.toLowerCase() || "professional"}, I am excited about the opportunity to contribute to your team.\n\n`;
-
-    // Middle paragraph - highlight relevant experience
-    const relevantExp = cvPreview.experience?.[0]; // Most recent experience
-    if (relevantExp) {
-      markdown += `In my recent role as ${relevantExp.title} at ${relevantExp.company}, `;
-      if (relevantExp.bullets?.length > 0) {
-        markdown += `I ${relevantExp.bullets[0].toLowerCase().replace(/^[^a-z]*/, "")}`;
-      } else {
-        markdown += `I gained valuable experience that aligns well with your requirements`;
-      }
-      markdown += `. `;
-    }
-
-    // Mention matching skills
-    const matchingSkills = this.getEmphasizedKeywords(context);
-    if (matchingSkills.length > 0) {
-      markdown += `My expertise in ${matchingSkills.slice(0, 3).join(", ")} `;
-      markdown += `makes me well-suited for this role.\n\n`;
-    } else {
-      markdown += `This experience has prepared me well for the challenges of this role.\n\n`;
-    }
-
-    // Closing paragraph
-    markdown += `I am eager to bring my skills and enthusiasm to ${company} and contribute to your continued success. `;
-    markdown += `Thank you for considering my application. I look forward to the opportunity to discuss how I can add value to your team.\n\n`;
-
-    markdown += `Best regards,\n`;
-    markdown += `[Your Name]`;
-
-    return markdown;
   }
 }

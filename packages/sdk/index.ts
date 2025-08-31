@@ -8,11 +8,12 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { ApplicationDetail } from './models/ApplicationDetail';
-export type { ApplicationGenerateRequest } from './models/ApplicationGenerateRequest';
+export { ApplicationGenerateRequest } from './models/ApplicationGenerateRequest';
 export type { ApplicationGenerateResponse } from './models/ApplicationGenerateResponse';
 export type { ApplicationList } from './models/ApplicationList';
 export { ApplicationStatus } from './models/ApplicationStatus';
 export type { ApplicationSummary } from './models/ApplicationSummary';
+export type { CoachingNudges } from './models/CoachingNudges';
 export type { CvPreview } from './models/CvPreview';
 export type { CvUploadResponse } from './models/CvUploadResponse';
 export type { Decision } from './models/Decision';

@@ -1,14 +1,67 @@
 import { Injectable } from "@nestjs/common";
 import { CvService } from "../cv/cv.service";
 import { JobsService } from "../jobs/jobs.service";
-import { GapRoadmapDto, GapActionDto } from "../common/dto";
+import { AgentOrchestrator, AgentContext } from "../agents";
+import { GapRoadmapDto, GapActionDto, CoachingNudgesDto } from "../common/dto";
 
 @Injectable()
 export class CoachService {
+  private agentOrchestrator: AgentOrchestrator;
+
   constructor(
     private cvService: CvService,
     private jobsService: JobsService
-  ) {}
+  ) {
+    this.agentOrchestrator = new AgentOrchestrator();
+  }
+
+  /**
+   * Get coaching nudges using V1 agent (User Story 7)
+   */
+  async getCoachingNudges(
+    userId: string,
+    jobId: string,
+    applicationId?: string
+  ): Promise<CoachingNudgesDto> {
+    // Get user CV and job details
+    const cvPreview = await this.cvService.getCvPreview(userId);
+    const jobDetail = await this.jobsService.getJob(jobId);
+
+    // Build agent context
+    const context: AgentContext = {
+      userId,
+      jobId,
+      applicationId,
+      cvFacts: cvPreview,
+      jobDetail,
+    };
+
+    // Get coaching nudges from agent
+    const agentResult = await this.agentOrchestrator.getCoachingNudges(
+      context,
+      applicationId
+    );
+
+    if (!agentResult.success) {
+      throw new Error(`Coaching failed: ${agentResult.error?.message}`);
+    }
+
+    const result = agentResult.data;
+
+    return {
+      nudges: result.nudges.map((nudge) => ({
+        category: nudge.category,
+        title: nudge.title,
+        description: nudge.description,
+        priority: nudge.priority,
+      })),
+      immediateActions: result.immediateActions.map((action) => ({
+        action: action.action,
+        etaDays: action.etaDays,
+      })),
+      jdThemes: result.jdThemes,
+    };
+  }
 
   async generateGapRoadmap(
     userId: string,

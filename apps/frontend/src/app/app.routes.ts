@@ -21,6 +21,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: "v1-generator",
+    loadComponent: () =>
+      import(
+        "./features/applications/v1-generator/v1-generator.component"
+      ).then((m) => m.V1GeneratorComponent),
+  },
+  {
     path: "applications",
     loadComponent: () =>
       import("./features/applications/applications-tracker.component").then(

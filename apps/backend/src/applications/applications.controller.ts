@@ -93,6 +93,76 @@ export class ApplicationsController {
     }
   }
 
+  @Post(":id/regenerate")
+  @ApiOperation({
+    summary: "Regenerate application docs with modified switches/settings (V1)",
+    operationId: "regenerateApplicationDocuments",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Application regenerated with new settings",
+    type: ApplicationGenerateResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Bad request",
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized",
+    type: ErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Not found",
+    type: ErrorDto,
+  })
+  async regenerateApplication(
+    @Param("id") applicationId: string,
+    @Body()
+    request: {
+      switches?: Array<{ label: string; active: boolean }>;
+      realityIndex?: number;
+      stylePreference?: "concise" | "balanced" | "detailed";
+    },
+    @Req() req: any
+  ): Promise<ApplicationGenerateResponseDto> {
+    try {
+      const result = await this.applicationsService.regenerateApplication(
+        req.userId,
+        applicationId,
+        request.switches || [],
+        request.realityIndex,
+        request.stylePreference
+      );
+      return result;
+    } catch (error) {
+      if (error.message?.includes("not found")) {
+        throw new HttpException(
+          {
+            error: {
+              code: "RESOURCE_NOT_FOUND",
+              message: error.message,
+            },
+          },
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      throw new HttpException(
+        {
+          error: {
+            code: "REGENERATION_FAILED",
+            message:
+              error.message || "Failed to regenerate application documents",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   @Get()
   @ApiOperation({
     summary: "List applications (summary)",

@@ -4,3 +4,5 @@ apps/backend/dist
 apps/backend/.env
 apps/frontend/.angular/
 apps/frontend/dist/
+packages/sdk/node_modules/
+packages/sdk/dist/

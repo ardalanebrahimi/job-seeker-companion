@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,10 +10,10 @@ datasource db {
 model UserFile {
   id        String   @id @default(uuid())
   userId    String
-  kind      String   // "cv"
+  kind      String
   mimeType  String
   filename  String
-  uri       String   // local file path or blob URI
+  uri       String
   createdAt DateTime @default(now())
 
   @@map("user_files")
@@ -25,7 +22,7 @@ model UserFile {
 model ResumeFact {
   id        String   @id @default(uuid())
   userId    String
-  kind      String   // "summary" | "skill" | "experience" | "education"
+  kind      String
   dataJson  Json
   createdAt DateTime @default(now())
 
@@ -34,17 +31,16 @@ model ResumeFact {
 }
 
 model JobPosting {
-  id           String   @id @default(uuid())
-  source       String   // "manual" | "url" | "connector"
+  id           String        @id @default(uuid())
+  source       String
   url          String?
   company      String?
   title        String?
   location     String?
   jdText       String
-  jdStructJson Json?    // structured JD data
-  rawHtmlUri   String?  // blob reference
-  createdAt    DateTime @default(now())
-  
+  jdStructJson Json?
+  rawHtmlUri   String?
+  createdAt    DateTime      @default(now())
   applications Application[]
 
   @@map("job_postings")
@@ -60,11 +56,10 @@ model Application {
   notesMd     String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-
-  job       JobPosting        @relation(fields: [jobId], references: [id])
-  docs      ApplicationDoc[]
-  decisions DecisionLog[]
-  notes     Note[]
+  docs        ApplicationDoc[]
+  job         JobPosting        @relation(fields: [jobId], references: [id])
+  decisions   DecisionLog[]
+  notes       Note[]
 
   @@map("applications")
 }
@@ -79,33 +74,33 @@ model ApplicationDoc {
   variantLabel  String?
   language      String?
   createdAt     DateTime       @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id])
+  application   Application    @relation(fields: [applicationId], references: [id])
 
   @@map("application_docs")
 }
 
 model DecisionLog {
-  id                 String   @id @default(uuid())
-  applicationId      String
-  personaLabel       String?
-  realityIndex       Int?     // 0-2
-  signalsJson        Json?    // array of match signals
-  keywordsEmphasized Json?    // array of keywords
-  createdAt          DateTime @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id])
+  id                  String      @id @default(uuid())
+  applicationId       String
+  personaLabel        String?
+  realityIndex        Int?
+  signalsJson         Json?
+  keywordsEmphasized  Json?
+  styleRationale      String?
+  switchesJson        Json?
+  provenanceLinksJson Json?
+  createdAt           DateTime    @default(now())
+  application         Application @relation(fields: [applicationId], references: [id])
 
   @@map("decision_logs")
 }
 
 model Note {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   applicationId String
   text          String
-  createdAt     DateTime @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id])
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id])
 
   @@map("notes")
 }

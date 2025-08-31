@@ -1,0 +1,254 @@
+<div class="v1-generator">
+  <div class="container">
+    <header class="header">
+      <h1>V1 Job Application Generator</h1>
+      <p class="subtitle">
+        AI-powered auto-decision with Reality Index and explainable choices
+      </p>
+    </header>
+
+    <!-- Step 1: Job Input -->
+    <section class="job-input-section">
+      <h2>1. Job Input</h2>
+      <div class="input-group">
+        <label for="jobUrl">Job URL:</label>
+        <input
+          type="url"
+          id="jobUrl"
+          [(ngModel)]="jobUrl"
+          placeholder="https://company.com/jobs/product-manager"
+          class="url-input"
+        />
+        <button
+          (click)="ingestJob()"
+          [disabled]="!jobUrl.trim()"
+          class="btn btn-primary"
+        >
+          Ingest Job
+        </button>
+      </div>
+
+      <div *ngIf="jobDetail" class="job-preview">
+        <h3>Job Preview</h3>
+        <div class="job-info">
+          <p><strong>Company:</strong> {{ jobDetail.company }}</p>
+          <p><strong>Title:</strong> {{ jobDetail.title }}</p>
+          <p><strong>Location:</strong> {{ jobDetail.location }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2: V1 Settings -->
+    <section class="v1-settings-section" *ngIf="jobDetail">
+      <h2>2. V1 Auto-Decision Settings</h2>
+
+      <div class="settings-grid">
+        <div class="setting-group">
+          <label for="realityIndex">Reality Index:</label>
+          <select
+            id="realityIndex"
+            [(ngModel)]="realityIndex"
+            class="select-input"
+          >
+            <option value="0">0 - Facts Only</option>
+            <option value="1">1 - Reframe & Quantify</option>
+            <option value="2">2 - Aspirational Phrasing</option>
+          </select>
+          <p class="setting-description">
+            {{ getRealityIndexDescription(realityIndex) }}
+          </p>
+        </div>
+
+        <div class="setting-group">
+          <label for="stylePreference">Style Preference:</label>
+          <select
+            id="stylePreference"
+            [(ngModel)]="stylePreference"
+            class="select-input"
+          >
+            <option value="concise">Concise</option>
+            <option value="balanced">Balanced</option>
+            <option value="detailed">Detailed</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label for="personaHint">Persona Hint (Optional):</label>
+          <input
+            type="text"
+            id="personaHint"
+            [(ngModel)]="personaHint"
+            placeholder="e.g., Technical-Product-Manager"
+            class="text-input"
+          />
+          <p class="setting-description">Leave empty for auto-decision</p>
+        </div>
+      </div>
+
+      <button
+        (click)="generateApplication()"
+        [disabled]="isGenerating"
+        class="btn btn-generate"
+      >
+        <span *ngIf="isGenerating">🤖 Generating...</span>
+        <span *ngIf="!isGenerating">✨ Generate Application (V1)</span>
+      </button>
+    </section>
+
+    <!-- Step 3: Generation Results -->
+    <section class="results-section" *ngIf="generationResult">
+      <h2>3. Generated Application</h2>
+
+      <!-- Decision Explanation -->
+      <div class="decision-panel">
+        <h3>🎯 Auto-Decision Explanation</h3>
+        <div class="decision-info">
+          <div class="decision-item">
+            <strong>Persona:</strong> {{ generationResult.decision?.persona }}
+          </div>
+          <div class="decision-item">
+            <strong>Reality Index:</strong>
+            {{ generationResult.decision?.realityIndex }}
+          </div>
+          <div class="decision-item">
+            <strong>Style Rationale:</strong>
+            {{ generationResult.decision?.styleRationale }}
+          </div>
+        </div>
+
+        <!-- Top Signals -->
+        <div class="signals" *ngIf="generationResult.decision?.signals">
+          <h4>Top Signals:</h4>
+          <ul class="signals-list">
+            <li *ngFor="let signal of generationResult.decision?.signals">
+              {{ signal }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Emphasized Keywords -->
+        <div
+          class="keywords"
+          *ngIf="generationResult.decision?.keywordsEmphasized"
+        >
+          <h4>Keywords Emphasized:</h4>
+          <div class="keywords-tags">
+            <span
+              *ngFor="
+                let keyword of generationResult.decision?.keywordsEmphasized
+              "
+              class="keyword-tag"
+            >
+              {{ keyword }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Switches Panel -->
+      <div class="switches-panel" *ngIf="generationResult.decision?.switches">
+        <h3>🎛️ Emphasis Switches</h3>
+        <p class="switches-description">
+          Toggle these to modify the generation focus:
+        </p>
+
+        <div class="switches-grid">
+          <div
+            *ngFor="
+              let switch of generationResult.decision?.switches;
+              let i = index
+            "
+            class="switch-item"
+            [class.active]="switch.active"
+            (click)="toggleSwitch(i)"
+          >
+            <span class="switch-toggle">{{ switch.active ? "✅" : "⬜" }}</span>
+            <span class="switch-label">{{ switch.label }}</span>
+          </div>
+        </div>
+
+        <button
+          (click)="regenerateWithSwitches()"
+          [disabled]="isGenerating"
+          class="btn btn-secondary"
+        >
+          <span *ngIf="isGenerating">🔄 Regenerating...</span>
+          <span *ngIf="!isGenerating">🔄 Regenerate with Changes</span>
+        </button>
+      </div>
+
+      <!-- Generated Documents -->
+      <div class="documents-panel">
+        <h3>📄 Generated Documents</h3>
+        <div class="documents-list">
+          <div *ngFor="let doc of generationResult.docs" class="document-item">
+            <div class="doc-info">
+              <span class="doc-kind">{{ doc.kind | uppercase }}</span>
+              <span class="doc-format">{{ doc.format }}</span>
+              <span class="doc-variant" *ngIf="doc.variantLabel">{{
+                doc.variantLabel
+              }}</span>
+            </div>
+            <button class="btn btn-link">View Document</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 4: Coaching Nudges -->
+    <section class="coaching-section" *ngIf="coachingNudges">
+      <h2>4. Coaching Nudges</h2>
+
+      <!-- JD Themes -->
+      <div class="themes" *ngIf="coachingNudges.jdThemes">
+        <h3>📊 Key JD Themes</h3>
+        <div class="themes-tags">
+          <span *ngFor="let theme of coachingNudges.jdThemes" class="theme-tag">
+            {{ theme }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Nudges -->
+      <div class="nudges" *ngIf="coachingNudges.nudges">
+        <h3>💡 Coaching Nudges</h3>
+        <div class="nudges-list">
+          <div
+            *ngFor="let nudge of coachingNudges.nudges"
+            class="nudge-item"
+            [class]="getPriorityClass(nudge.priority || 'medium')"
+          >
+            <div class="nudge-header">
+              <span class="nudge-icon">{{
+                getCategoryIcon(nudge.category || "improvement")
+              }}</span>
+              <span class="nudge-title">{{ nudge.title }}</span>
+              <span class="nudge-priority">{{ nudge.priority }}</span>
+            </div>
+            <p class="nudge-description">{{ nudge.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Immediate Actions -->
+      <div class="actions" *ngIf="coachingNudges.immediateActions">
+        <h3>⚡ Immediate Actions</h3>
+        <div class="actions-list">
+          <div
+            *ngFor="let action of coachingNudges.immediateActions"
+            class="action-item"
+          >
+            <span class="action-text">{{ action.action }}</span>
+            <span class="action-eta">{{ action.etaDays }} days</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Display -->
+    <div *ngIf="error" class="error-panel">
+      <h3>❌ Error</h3>
+      <p>{{ error }}</p>
+    </div>
+  </div>
+</div>

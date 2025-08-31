@@ -231,6 +231,54 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /applications/{id}/regenerate:
+    post:
+      tags: [Applications]
+      summary: Regenerate application docs with modified switches/settings (V1)
+      operationId: regenerateApplicationDocuments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                switches:
+                  type: array
+                  description: Modified emphasis switches
+                  items:
+                    type: object
+                    properties:
+                      label: { type: string }
+                      active: { type: boolean }
+                realityIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 2
+                stylePreference:
+                  type: string
+                  enum: [concise, balanced, detailed]
+      responses:
+        "200":
+          description: Application regenerated with new settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationGenerateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /applications/{id}/status:
     post:
       tags: [Applications]
@@ -256,6 +304,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApplicationSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /coach/nudges:
+    post:
+      tags: [Coach]
+      summary: Get coaching nudges for a specific job application (V1)
+      operationId: getCoachingNudges
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobId]
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                applicationId:
+                  type: string
+                  format: uuid
+                  description: Optional - for application-specific advice
+      responses:
+        "200":
+          description: Coaching nudges and actionable tips
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachingNudges"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -453,10 +535,17 @@ components:
           type: integer
           minimum: 0
           maximum: 2
-          description: Optional override; default decided by agent
+          description: Optional override; default decided by agent (V1)
         language:
           type: string
           description: Output language; defaults to JD language
+        personaHint:
+          type: string
+          description: Optional persona override; agent auto-decides if not provided (V1)
+        stylePreference:
+          type: string
+          enum: [concise, balanced, detailed]
+          description: Optional style preference; agent auto-decides if not provided (V1)
 
     ApplicationGenerateResponse:
       type: object
@@ -551,14 +640,48 @@ components:
       properties:
         persona:
           type: string
+          description: Auto-decided persona label (V1)
         realityIndex:
           type: integer
+          description: Applied Reality Index (0-2) (V1)
         signals:
           type: array
           items: { type: string }
+          description: Top signals that influenced persona choice (V1)
         keywordsEmphasized:
           type: array
           items: { type: string }
+          description: JD keywords emphasized in output (V1)
+        styleRationale:
+          type: string
+          description: Why this style/template was chosen (V1)
+        switches:
+          type: array
+          description: Available emphasis toggles for re-generation (V1)
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+                description: e.g., "Emphasize leadership"
+              active:
+                type: boolean
+                description: Current state of this switch
+        provenanceLinks:
+          type: array
+          description: Claim-to-fact mappings for transparency (V1)
+          items:
+            type: object
+            properties:
+              claimText:
+                type: string
+                description: Text of the claim in generated document
+              sourceFactId:
+                type: string
+                description: ID of supporting resume fact
+              factType:
+                type: string
+                enum: [role, project, education, cert, skill]
 
     NoteCreate:
       type: object
@@ -600,6 +723,38 @@ components:
       enum: [md, docx, pdf]
 
     # --- Coach ---
+    CoachingNudges:
+      type: object
+      properties:
+        nudges:
+          type: array
+          description: 3-5 actionable coaching tips specific to this JD (V1)
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+                enum: [emphasize, trim, gap, improvement]
+              title:
+                type: string
+              description:
+                type: string
+              priority:
+                type: string
+                enum: [high, medium, low]
+        immediateActions:
+          type: array
+          description: Things to address this week
+          items:
+            type: object
+            properties:
+              action: { type: string }
+              etaDays: { type: integer }
+        jdThemes:
+          type: array
+          description: Key themes from JD that advice references
+          items: { type: string }
+
     GapRoadmap:
       type: object
       properties:

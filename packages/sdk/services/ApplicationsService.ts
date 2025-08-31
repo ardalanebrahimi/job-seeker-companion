@@ -114,6 +114,43 @@ export class ApplicationsService {
         });
     }
     /**
+     * Regenerate application docs with modified switches/settings (V1)
+     * @returns ApplicationGenerateResponse Application regenerated with new settings
+     * @throws ApiError
+     */
+    public static regenerateApplicationDocuments({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: {
+            /**
+             * Modified emphasis switches
+             */
+            switches?: Array<{
+                label?: string;
+                active?: boolean;
+            }>;
+            realityIndex?: number;
+            stylePreference?: 'concise' | 'balanced' | 'detailed';
+        },
+    }): CancelablePromise<ApplicationGenerateResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/applications/{id}/regenerate',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
      * Update application status
      * @returns ApplicationSummary Status updated
      * @throws ApiError
