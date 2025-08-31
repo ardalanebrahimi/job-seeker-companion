@@ -1,0 +1,623 @@
+openapi: 3.1.0
+info:
+  title: Job Companion API
+  version: 1.0.0
+  description: |
+    OpenAPI-first contract for Job Companion (V0–V1).
+    Source of truth for SDK generation and backend implementation.
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+  - url: http://localhost:8080/v1
+    description: Local
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Users
+  - name: Jobs
+  - name: Applications
+  - name: Coach
+
+paths:
+  /users/me/cv:
+    post:
+      tags: [Users]
+      summary: Upload base CV (DOCX or PDF)
+      operationId: uploadBaseCv
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                filename:
+                  type: string
+                language:
+                  type: string
+                  description: ISO language tag (e.g., en, de)
+      responses:
+        "201":
+          description: CV stored and parsed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CvUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    get:
+      tags: [Users]
+      summary: Get parsed base CV preview
+      operationId: getBaseCvPreview
+      responses:
+        "200":
+          description: Parsed CV facts and file references
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CvPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /jobs/ingest:
+    post:
+      tags: [Jobs]
+      summary: Ingest a job from URL or raw text
+      operationId: ingestJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobIngestRequest"
+      responses:
+        "201":
+          description: Job ingested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobIngestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /jobs/{id}:
+    get:
+      tags: [Jobs]
+      summary: Get job details and basic analysis
+      operationId: getJob
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Job with JD text and extracted structure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications:
+    get:
+      tags: [Applications]
+      summary: List applications (summary)
+      operationId: listApplications
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ApplicationStatus"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Paged application summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /applications/generate:
+    post:
+      tags: [Applications]
+      summary: Generate tailored CV & cover letter for a job (auto persona + RI)
+      operationId: generateApplicationDocuments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationGenerateRequest"
+      responses:
+        "201":
+          description: Application created with generated documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationGenerateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}:
+    get:
+      tags: [Applications]
+      summary: Get application detail (docs + decisions)
+      operationId: getApplicationDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          description: Application detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/notes:
+    post:
+      tags: [Applications]
+      summary: Add a note to an application
+      operationId: addApplicationNote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteCreate"
+      responses:
+        "201":
+          description: Note stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Note"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/status:
+    post:
+      tags: [Applications]
+      summary: Update application status
+      operationId: updateApplicationStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            format: uuid
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /coach/gap-roadmap:
+    post:
+      tags: [Coach]
+      summary: Generate gap analysis and short roadmap for a job
+      operationId: generateGapRoadmap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobId]
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                personaHint:
+                  type: string
+                  description: Optional persona label override
+      responses:
+        "200":
+          description: Gap analysis and roadmap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GapRoadmap"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+          required: [code, message]
+      required: [error]
+
+    # --- Users / CV ---
+    CvUploadResponse:
+      type: object
+      properties:
+        fileId:
+          type: string
+          format: uuid
+        parsed:
+          type: boolean
+        language:
+          type: string
+        preview:
+          $ref: "#/components/schemas/CvPreview"
+      required: [fileId, parsed]
+
+    CvPreview:
+      type: object
+      properties:
+        summary:
+          type: string
+        skills:
+          type: array
+          items: { type: string }
+        experience:
+          type: array
+          items:
+            type: object
+            properties:
+              company: { type: string }
+              title: { type: string }
+              startDate: { type: string, format: date }
+              endDate: { type: string, format: date, nullable: true }
+              bullets:
+                type: array
+                items: { type: string }
+        education:
+          type: array
+          items:
+            type: object
+            properties:
+              institution: { type: string }
+              degree: { type: string }
+              year: { type: string }
+        fileUri:
+          type: string
+
+    # --- Jobs ---
+    JobIngestRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        rawText:
+          type: string
+        language:
+          type: string
+          description: Optional hint (e.g., en, de)
+      oneOf:
+        - required: [url]
+        - required: [rawText]
+
+    JobIngestResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+      required: [jobId]
+
+    JobDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        company:
+          type: string
+        title:
+          type: string
+        location:
+          type: string
+        jdText:
+          type: string
+        jdStruct:
+          $ref: "#/components/schemas/JdStruct"
+        firstSeenAt:
+          type: string
+          format: date-time
+      required: [id, jdText]
+
+    JdStruct:
+      type: object
+      properties:
+        skills:
+          type: array
+          items: { type: string }
+        requirements:
+          type: array
+          items: { type: string }
+        niceToHave:
+          type: array
+          items: { type: string }
+        seniority:
+          type: string
+
+    # --- Applications ---
+    ApplicationGenerateRequest:
+      type: object
+      required: [jobId]
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        realityIndex:
+          type: integer
+          minimum: 0
+          maximum: 2
+          description: Optional override; default decided by agent
+        language:
+          type: string
+          description: Output language; defaults to JD language
+
+    ApplicationGenerateResponse:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        docs:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeneratedDoc"
+        decision:
+          $ref: "#/components/schemas/Decision"
+      required: [applicationId, docs]
+
+    GeneratedDoc:
+      type: object
+      properties:
+        kind:
+          $ref: "#/components/schemas/DocumentKind"
+        format:
+          $ref: "#/components/schemas/DocumentFormat"
+        uri:
+          type: string
+        variantLabel:
+          type: string
+          description: e.g., concise | balanced | detailed
+        language:
+          type: string
+      required: [kind, format, uri]
+
+    ApplicationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApplicationSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required: [items, page, pageSize, total]
+
+    ApplicationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        company:
+          type: string
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        createdAt:
+          type: string
+          format: date-time
+        appliedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, status, createdAt]
+
+    ApplicationDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        job:
+          $ref: "#/components/schemas/JobDetail"
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+        notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Note"
+        docs:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeneratedDoc"
+        decision:
+          $ref: "#/components/schemas/Decision"
+      required: [id, status]
+
+    Decision:
+      type: object
+      properties:
+        persona:
+          type: string
+        realityIndex:
+          type: integer
+        signals:
+          type: array
+          items: { type: string }
+        keywordsEmphasized:
+          type: array
+          items: { type: string }
+
+    NoteCreate:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    Note:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, text, createdAt]
+
+    StatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/ApplicationStatus"
+
+    ApplicationStatus:
+      type: string
+      enum: [Found, Applied, Interview, Offer, Rejected]
+
+    DocumentKind:
+      type: string
+      enum: [cv, cover, brochure, prep]
+
+    DocumentFormat:
+      type: string
+      enum: [md, docx, pdf]
+
+    # --- Coach ---
+    GapRoadmap:
+      type: object
+      properties:
+        matchScore:
+          type: number
+          format: float
+        mustHaveGaps:
+          type: array
+          items: { type: string }
+        niceToHaveGaps:
+          type: array
+          items: { type: string }
+        actions:
+          type: array
+          description: Actionable steps or micro-projects
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              description: { type: string }
+              etaDays: { type: integer }
