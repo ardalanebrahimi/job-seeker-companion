@@ -8,14 +8,29 @@ import type { ApplicationGenerateResponse } from '../models/ApplicationGenerateR
 import type { ApplicationList } from '../models/ApplicationList';
 import type { ApplicationStatus } from '../models/ApplicationStatus';
 import type { ApplicationSummary } from '../models/ApplicationSummary';
+import type { CoachingCompanionResponse } from '../models/CoachingCompanionResponse';
+import type { CompanySnapshot } from '../models/CompanySnapshot';
 import type { DocumentDiff } from '../models/DocumentDiff';
 import type { DocumentHistory } from '../models/DocumentHistory';
+import type { InterviewFeedback } from '../models/InterviewFeedback';
+import type { InterviewFeedbackCreate } from '../models/InterviewFeedbackCreate';
+import type { InterviewFeedbackResponse } from '../models/InterviewFeedbackResponse';
+import type { InterviewNotes } from '../models/InterviewNotes';
+import type { InterviewNotesCreate } from '../models/InterviewNotesCreate';
+import type { InterviewNotesResponse } from '../models/InterviewNotesResponse';
+import type { InterviewNotesUpdate } from '../models/InterviewNotesUpdate';
+import type { InterviewPrepPack } from '../models/InterviewPrepPack';
+import type { LikelyQuestionsResponse } from '../models/LikelyQuestionsResponse';
 import type { Note } from '../models/Note';
 import type { NoteCreate } from '../models/NoteCreate';
 import type { Reminder } from '../models/Reminder';
 import type { ReminderCreate } from '../models/ReminderCreate';
 import type { ReminderWithApplication } from '../models/ReminderWithApplication';
+import type { RoleSpecificFitBrief } from '../models/RoleSpecificFitBrief';
+import type { StarStoriesResponse } from '../models/StarStoriesResponse';
 import type { StatusUpdate } from '../models/StatusUpdate';
+import type { ThankYouEmailRequest } from '../models/ThankYouEmailRequest';
+import type { ThankYouEmailResponse } from '../models/ThankYouEmailResponse';
 import type { VariantGenerateRequest } from '../models/VariantGenerateRequest';
 import type { VariantGenerateResponse } from '../models/VariantGenerateResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -513,6 +528,293 @@ export class ApplicationsService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/reminders/{id}/complete',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get company snapshot for application
+     * @returns CompanySnapshot Company snapshot for this application
+     * @throws ApiError
+     */
+    public static getApplicationCompanySnapshot({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<CompanySnapshot> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/company/snapshot',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get role-specific fit brief
+     * @returns RoleSpecificFitBrief Role-specific fit brief
+     * @throws ApiError
+     */
+    public static getRoleSpecificFitBrief({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<RoleSpecificFitBrief> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/fit-brief',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get interview prep pack
+     * @returns InterviewPrepPack Interview prep pack
+     * @throws ApiError
+     */
+    public static getInterviewPrepPack({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<InterviewPrepPack> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/interview-prep',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Generate STAR stories for behavioral questions
+     * @returns StarStoriesResponse Generated STAR stories
+     * @throws ApiError
+     */
+    public static generateStarStories({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<StarStoriesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/star-stories',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get likely interview questions
+     * @returns LikelyQuestionsResponse Likely interview questions
+     * @throws ApiError
+     */
+    public static getLikelyQuestions({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<LikelyQuestionsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/likely-questions',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get interview notes for application
+     * @returns InterviewNotesResponse Interview notes
+     * @throws ApiError
+     */
+    public static getInterviewNotes({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<InterviewNotesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/interview-notes',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Add interview notes
+     * @returns InterviewNotes Interview notes added
+     * @throws ApiError
+     */
+    public static addInterviewNotes({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: InterviewNotesCreate,
+    }): CancelablePromise<InterviewNotes> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/applications/{id}/interview-notes',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Update interview notes
+     * @returns InterviewNotes Interview notes updated
+     * @throws ApiError
+     */
+    public static updateInterviewNotes({
+        id,
+        noteId,
+        requestBody,
+    }: {
+        id: string,
+        noteId: string,
+        requestBody: InterviewNotesUpdate,
+    }): CancelablePromise<InterviewNotes> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/applications/{id}/interview-notes/{noteId}',
+            path: {
+                'id': id,
+                'noteId': noteId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get interview feedback log
+     * @returns InterviewFeedbackResponse Interview feedback log
+     * @throws ApiError
+     */
+    public static getInterviewFeedback({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<InterviewFeedbackResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/feedback',
+            path: {
+                'id': id,
+            },
+            errors: {
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Add interview feedback
+     * @returns InterviewFeedback Interview feedback added
+     * @throws ApiError
+     */
+    public static addInterviewFeedback({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: InterviewFeedbackCreate,
+    }): CancelablePromise<InterviewFeedback> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/applications/{id}/feedback',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Generate thank-you email after interview
+     * @returns ThankYouEmailResponse Generated thank-you email
+     * @throws ApiError
+     */
+    public static generateThankYouEmail({
+        id,
+        requestBody,
+    }: {
+        id: string,
+        requestBody: ThankYouEmailRequest,
+    }): CancelablePromise<ThankYouEmailResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/applications/{id}/thank-you-email',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Bad request`,
+                401: `Unauthorized`,
+                404: `Not found`,
+            },
+        });
+    }
+    /**
+     * Get coaching companion suggestions for interview hub
+     * @returns CoachingCompanionResponse Coaching companion suggestions
+     * @throws ApiError
+     */
+    public static getCoachingCompanion({
+        id,
+    }: {
+        id: string,
+    }): CancelablePromise<CoachingCompanionResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/applications/{id}/coaching-companion',
             path: {
                 'id': id,
             },

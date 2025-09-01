@@ -890,4 +890,319 @@ export class CoachController {
       );
     }
   }
+
+  // V4 Endpoints - Company Brochure & Interview Hub
+  @Get(":id/company/snapshot")
+  @ApiOperation({
+    summary: "Get company snapshot for application",
+    operationId: "getApplicationCompanySnapshot",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Company snapshot for this application",
+  })
+  async getApplicationCompanySnapshot(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getApplicationCompanySnapshot(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "SNAPSHOT_FETCH_FAILED",
+            message: error.message || "Failed to fetch company snapshot",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/fit-brief")
+  @ApiOperation({
+    summary: "Get role-specific fit brief",
+    operationId: "getRoleSpecificFitBrief",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Role-specific fit brief",
+  })
+  async getRoleSpecificFitBrief(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getRoleSpecificFitBrief(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "FIT_BRIEF_FAILED",
+            message: error.message || "Failed to generate fit brief",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/interview-prep")
+  @ApiOperation({
+    summary: "Get interview prep pack",
+    operationId: "getInterviewPrepPack",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Interview prep pack",
+  })
+  async getInterviewPrepPack(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getInterviewPrepPack(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "PREP_PACK_FAILED",
+            message: error.message || "Failed to generate interview prep pack",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/star-stories")
+  @ApiOperation({
+    summary: "Generate STAR stories for behavioral questions",
+    operationId: "generateStarStories",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Generated STAR stories",
+  })
+  async generateStarStories(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.generateStarStories(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "STAR_STORIES_FAILED",
+            message: error.message || "Failed to generate STAR stories",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/likely-questions")
+  @ApiOperation({
+    summary: "Get likely interview questions",
+    operationId: "getLikelyQuestions",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Likely interview questions",
+  })
+  async getLikelyQuestions(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getLikelyQuestions(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "QUESTIONS_FAILED",
+            message: error.message || "Failed to generate likely questions",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/interview-notes")
+  @ApiOperation({
+    summary: "Get interview notes for application",
+    operationId: "getInterviewNotes",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Interview notes",
+  })
+  async getInterviewNotes(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getInterviewNotes(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "NOTES_FETCH_FAILED",
+            message: error.message || "Failed to fetch interview notes",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(":id/interview-notes")
+  @ApiOperation({
+    summary: "Add interview notes",
+    operationId: "addInterviewNotes",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Interview notes added",
+  })
+  async addInterviewNotes(@Param("id") id: string, @Body() createDto: any) {
+    try {
+      return await this.applicationsService.addInterviewNotes(id, createDto);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "NOTES_CREATE_FAILED",
+            message: error.message || "Failed to add interview notes",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Put(":id/interview-notes/:noteId")
+  @ApiOperation({
+    summary: "Update interview notes",
+    operationId: "updateInterviewNotes",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Interview notes updated",
+  })
+  async updateInterviewNotes(
+    @Param("id") id: string,
+    @Param("noteId") noteId: string,
+    @Body() updateDto: any
+  ) {
+    try {
+      return await this.applicationsService.updateInterviewNotes(
+        id,
+        noteId,
+        updateDto
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "NOTES_UPDATE_FAILED",
+            message: error.message || "Failed to update interview notes",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/feedback")
+  @ApiOperation({
+    summary: "Get interview feedback log",
+    operationId: "getInterviewFeedback",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Interview feedback log",
+  })
+  async getInterviewFeedback(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getInterviewFeedback(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "FEEDBACK_FETCH_FAILED",
+            message: error.message || "Failed to fetch interview feedback",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(":id/feedback")
+  @ApiOperation({
+    summary: "Add interview feedback",
+    operationId: "addInterviewFeedback",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Interview feedback added",
+  })
+  async addInterviewFeedback(@Param("id") id: string, @Body() createDto: any) {
+    try {
+      return await this.applicationsService.addInterviewFeedback(id, createDto);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "FEEDBACK_CREATE_FAILED",
+            message: error.message || "Failed to add interview feedback",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post(":id/thank-you-email")
+  @ApiOperation({
+    summary: "Generate thank-you email after interview",
+    operationId: "generateThankYouEmail",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Generated thank-you email",
+  })
+  async generateThankYouEmail(
+    @Param("id") id: string,
+    @Body() requestDto: any
+  ) {
+    try {
+      return await this.applicationsService.generateThankYouEmail(
+        id,
+        requestDto
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "EMAIL_GENERATION_FAILED",
+            message: error.message || "Failed to generate thank-you email",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Get(":id/coaching-companion")
+  @ApiOperation({
+    summary: "Get coaching companion suggestions for interview hub",
+    operationId: "getCoachingCompanion",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Coaching companion suggestions",
+  })
+  async getCoachingCompanion(@Param("id") id: string) {
+    try {
+      return await this.applicationsService.getCoachingCompanion(id);
+    } catch (error) {
+      throw new HttpException(
+        {
+          error: {
+            code: "COACHING_FAILED",
+            message: error.message || "Failed to get coaching suggestions",
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 }

@@ -6,6 +6,7 @@ import { JobsService } from "../jobs/jobs.service";
 import { DocumentVariantsService } from "../documents/document-variants.service";
 import { DocumentDiffService } from "../documents/document-diff.service";
 import { DocumentGeneratorService } from "../documents/document-generator.service";
+import { ResearchService } from "../research/research.service";
 import {
   AgentOrchestrator,
   AgentContext,
@@ -31,6 +32,22 @@ import {
   CoachingHintsDto,
   ApplicationHistoryDto,
   DuplicateCheckResponseDto,
+  // V4 DTOs
+  CompanySnapshotDto,
+  RoleSpecificFitBriefDto,
+  InterviewPrepPackDto,
+  StarStoriesResponseDto,
+  LikelyQuestionsResponseDto,
+  InterviewNotesResponseDto,
+  InterviewNotesCreateDto,
+  InterviewNotesUpdateDto,
+  InterviewNotesDto,
+  InterviewFeedbackResponseDto,
+  InterviewFeedbackCreateDto,
+  InterviewFeedbackDto,
+  ThankYouEmailRequestDto,
+  ThankYouEmailResponseDto,
+  CoachingCompanionResponseDto,
 } from "../common/dto";
 
 @Injectable()
@@ -44,7 +61,8 @@ export class ApplicationsService {
     private jobsService: JobsService,
     private documentVariants: DocumentVariantsService,
     private documentDiff: DocumentDiffService,
-    private documentGenerator: DocumentGeneratorService
+    private documentGenerator: DocumentGeneratorService,
+    private researchService: ResearchService
   ) {
     this.agentOrchestrator = new AgentOrchestrator();
   }
@@ -961,5 +979,344 @@ export class ApplicationsService {
         isCurrent: index === 0, // Most recent is current
       })),
     };
+  }
+
+  // V4 Methods - Company Brochure & Interview Hub
+  async getApplicationCompanySnapshot(
+    applicationId: string
+  ): Promise<CompanySnapshotDto> {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Extract company info from job or use a dummy company ID
+    const companyId =
+      application.job.company || `company-${application.job.id}`;
+
+    return this.researchService.getCompanySnapshot(companyId);
+  }
+
+  async getRoleSpecificFitBrief(
+    applicationId: string
+  ): Promise<RoleSpecificFitBriefDto> {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Generate fit brief using AI agent
+    const context: AgentContext = {
+      userId: application.userId,
+      applicationId,
+      jobId: application.jobId,
+    };
+
+    // This would use a specialized agent for fit analysis
+    return {
+      id: `fit-${applicationId}`,
+      applicationId,
+      fitReasons: [
+        {
+          reason: "Strong technical background matches role requirements",
+          evidence: "Experience with required technologies and frameworks",
+          strength: "high" as const,
+        },
+        {
+          reason: "Leadership experience aligns with team management aspects",
+          evidence: "Previous roles with team leadership responsibilities",
+          strength: "medium" as const,
+        },
+      ],
+      skillAlignments: [
+        {
+          skill: "JavaScript/TypeScript",
+          userExperience: "5+ years professional development",
+          companyNeed: "Frontend and backend development",
+          matchScore: 0.9,
+        },
+      ],
+      tone: "coaching",
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  async getInterviewPrepPack(
+    applicationId: string
+  ): Promise<InterviewPrepPackDto> {
+    const [snapshot, fitBrief, starStories, questions] = await Promise.all([
+      this.getApplicationCompanySnapshot(applicationId),
+      this.getRoleSpecificFitBrief(applicationId),
+      this.generateStarStories(applicationId),
+      this.getLikelyQuestions(applicationId),
+    ]);
+
+    return {
+      id: `prep-${applicationId}`,
+      applicationId,
+      companySnapshot: snapshot,
+      fitBrief,
+      starStories: starStories.stories,
+      likelyQuestions: questions.questions,
+      exportUrl: `https://storage.example.com/prep-packs/${applicationId}.pdf`,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  async generateStarStories(
+    applicationId: string
+  ): Promise<StarStoriesResponseDto> {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // This would use the coach agent to generate STAR stories
+    // For now, return mock data
+    const stories = [
+      {
+        id: `star-${applicationId}-1`,
+        title: "Led cross-functional project delivery",
+        category: "Leadership",
+        situation:
+          "Tasked with delivering a critical product feature with tight deadline",
+        task: "Coordinate between engineering, design, and product teams",
+        action:
+          "Established daily standups, created clear communication channels, and removed blockers",
+        result:
+          "Delivered feature 2 weeks early, improving customer satisfaction by 15%",
+        realityIndex: 1,
+        isEditable: true,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+
+    return {
+      stories,
+      total: stories.length,
+      applicationId,
+    };
+  }
+
+  async getLikelyQuestions(
+    applicationId: string
+  ): Promise<LikelyQuestionsResponseDto> {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // This would use AI to generate likely questions based on the job description
+    const questions = [
+      {
+        id: `q-${applicationId}-1`,
+        question:
+          "Tell me about a time you had to work with a difficult stakeholder",
+        category: "behavioral" as const,
+        difficulty: "medium" as const,
+        linkedStoryId: null,
+        tips: [
+          "Focus on your communication and problem-solving skills",
+          "Emphasize the positive outcome",
+        ],
+      },
+      {
+        id: `q-${applicationId}-2`,
+        question: "How do you approach technical debt in your projects?",
+        category: "role-specific" as const,
+        difficulty: "medium" as const,
+        linkedStoryId: null,
+        tips: [
+          "Discuss prioritization and business impact",
+          "Mention specific tools or processes you use",
+        ],
+      },
+    ];
+
+    return {
+      questions,
+      applicationId,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getInterviewNotes(
+    applicationId: string
+  ): Promise<InterviewNotesResponseDto> {
+    // In a real implementation, this would query the database
+    // For now, return empty array
+    return {
+      notes: [],
+      applicationId,
+      total: 0,
+    };
+  }
+
+  async addInterviewNotes(
+    applicationId: string,
+    createDto: InterviewNotesCreateDto
+  ): Promise<InterviewNotesDto> {
+    // This would insert into the database
+    const noteId = `note-${Date.now()}`;
+
+    return {
+      id: noteId,
+      applicationId,
+      interviewDate: createDto.interviewDate,
+      interviewerName: createDto.interviewerName,
+      interviewType: createDto.interviewType,
+      duration: createDto.duration,
+      notes: createDto.notes,
+      rating: createDto.rating,
+      nextSteps: createDto.nextSteps,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async updateInterviewNotes(
+    applicationId: string,
+    noteId: string,
+    updateDto: InterviewNotesUpdateDto
+  ): Promise<InterviewNotesDto> {
+    // This would update the database record
+    // For now, return a mock updated note
+    return {
+      id: noteId,
+      applicationId,
+      interviewDate: updateDto.interviewDate || new Date().toISOString(),
+      interviewerName: updateDto.interviewerName,
+      interviewType: updateDto.interviewType || "video",
+      duration: updateDto.duration,
+      notes: updateDto.notes || "Updated notes",
+      rating: updateDto.rating,
+      nextSteps: updateDto.nextSteps,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getInterviewFeedback(
+    applicationId: string
+  ): Promise<InterviewFeedbackResponseDto> {
+    // In a real implementation, this would query the database
+    return {
+      feedback: [],
+      applicationId,
+      total: 0,
+    };
+  }
+
+  async addInterviewFeedback(
+    applicationId: string,
+    createDto: InterviewFeedbackCreateDto
+  ): Promise<InterviewFeedbackDto> {
+    // This would insert into the database
+    const feedbackId = `feedback-${Date.now()}`;
+
+    return {
+      id: feedbackId,
+      applicationId,
+      interviewDate: createDto.interviewDate,
+      feedbackSource: createDto.feedbackSource,
+      feedback: createDto.feedback,
+      areasForImprovement: createDto.areasForImprovement,
+      positivePoints: createDto.positivePoints,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  async generateThankYouEmail(
+    applicationId: string,
+    requestDto: ThankYouEmailRequestDto
+  ): Promise<ThankYouEmailResponseDto> {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // This would use the writer agent to generate a personalized thank-you email
+    const companyName = application.job.company || "the company";
+    const roleName = application.job.title || "the position";
+
+    return {
+      subject: `Thank you for the ${roleName} interview`,
+      body: `Dear ${requestDto.interviewerName || "Hiring Team"},
+
+Thank you for taking the time to meet with me ${this.formatInterviewDate(requestDto.interviewDate)} regarding the ${roleName} position at ${companyName}.
+
+I enjoyed our conversation and learning more about the team's goals and challenges. The discussion about [specific topic] was particularly interesting and reinforced my enthusiasm for this opportunity.
+
+${requestDto.personalNote ? `\n${requestDto.personalNote}\n` : ""}
+
+I look forward to hearing about the next steps in the process. Please don't hesitate to reach out if you need any additional information from me.
+
+Best regards,
+[Your Name]`,
+      recipientName: requestDto.interviewerName,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getCoachingCompanion(
+    applicationId: string
+  ): Promise<CoachingCompanionResponseDto> {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: true },
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // This would use the coach agent to generate personalized advice
+    return {
+      motivationalAdvice:
+        "You've got this! Your background shows strong alignment with their needs. Focus on communicating your impact clearly.",
+      practiceSuggestion:
+        "Practice explaining your most complex project in simple terms - this often comes up in interviews.",
+      feedbackBasedTips: [
+        "Based on similar roles, emphasize your collaboration skills",
+        "Prepare examples that show your problem-solving process",
+      ],
+      starStoryGaps: [
+        "Consider adding a story about handling unexpected challenges",
+        "Include an example of mentoring or helping teammates grow",
+      ],
+      lastUpdated: new Date().toISOString(),
+      applicationId,
+    };
+  }
+
+  private formatInterviewDate(dateString: string): string {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return date.toLocaleDateString("en-US", options);
   }
 }

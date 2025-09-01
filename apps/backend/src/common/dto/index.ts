@@ -780,3 +780,470 @@ export class DocumentHistoryDto {
   @ApiProperty({ type: [DocumentHistoryItemDto] })
   documents: DocumentHistoryItemDto[];
 }
+
+// V4 DTOs - Company Brochure & Interview Hub
+export class CompanyNewsItemDto {
+  @ApiProperty()
+  title: string;
+
+  @ApiPropertyOptional()
+  url?: string;
+
+  @ApiProperty()
+  date: string;
+
+  @ApiProperty()
+  summary: string;
+}
+
+export class CompanySnapshotDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiPropertyOptional()
+  logo?: string;
+
+  @ApiPropertyOptional()
+  website?: string;
+
+  @ApiProperty()
+  industry: string;
+
+  @ApiPropertyOptional()
+  size?: string;
+
+  @ApiPropertyOptional()
+  headquarters?: string;
+
+  @ApiProperty()
+  summary: string;
+
+  @ApiProperty({ type: [CompanyNewsItemDto] })
+  recentNews: CompanyNewsItemDto[];
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty()
+  updatedAt: string;
+}
+
+export class CompanyBrochureSectionDto {
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  content: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  images?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  competitors?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  values?: string[];
+}
+
+export class CompanyTimelineItemDto {
+  @ApiProperty()
+  year: number;
+
+  @ApiProperty()
+  event: string;
+
+  @ApiPropertyOptional()
+  description?: string;
+}
+
+export class CompanyBrochureSectionsDto {
+  @ApiPropertyOptional()
+  products?: CompanyBrochureSectionDto;
+
+  @ApiPropertyOptional()
+  market?: CompanyBrochureSectionDto;
+
+  @ApiPropertyOptional()
+  culture?: CompanyBrochureSectionDto;
+
+  @ApiPropertyOptional({ type: [CompanyTimelineItemDto] })
+  timeline?: CompanyTimelineItemDto[];
+}
+
+export class CompanyBrochureDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  companyId: string;
+
+  @ApiProperty()
+  snapshot: CompanySnapshotDto;
+
+  @ApiProperty()
+  sections: CompanyBrochureSectionsDto;
+
+  @ApiPropertyOptional()
+  exportUrl?: string;
+
+  @ApiProperty()
+  createdAt: string;
+}
+
+export class FitReasonDto {
+  @ApiProperty()
+  reason: string;
+
+  @ApiProperty()
+  evidence: string;
+
+  @ApiProperty({ enum: ["high", "medium", "low"] })
+  strength: "high" | "medium" | "low";
+}
+
+export class SkillAlignmentDto {
+  @ApiProperty()
+  skill: string;
+
+  @ApiProperty()
+  userExperience: string;
+
+  @ApiProperty()
+  companyNeed: string;
+
+  @ApiProperty({ minimum: 0, maximum: 1 })
+  matchScore: number;
+}
+
+export class RoleSpecificFitBriefDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty({ type: [FitReasonDto] })
+  fitReasons: FitReasonDto[];
+
+  @ApiProperty({ type: [SkillAlignmentDto] })
+  skillAlignments: SkillAlignmentDto[];
+
+  @ApiPropertyOptional({ default: "coaching" })
+  tone?: string;
+
+  @ApiProperty()
+  createdAt: string;
+}
+
+export class StarStoryDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  category: string;
+
+  @ApiProperty()
+  situation: string;
+
+  @ApiProperty()
+  task: string;
+
+  @ApiProperty()
+  action: string;
+
+  @ApiProperty()
+  result: string;
+
+  @ApiProperty({ minimum: 0, maximum: 2 })
+  realityIndex: number;
+
+  @ApiPropertyOptional({ default: true })
+  isEditable?: boolean;
+
+  @ApiProperty()
+  createdAt: string;
+}
+
+export class StarStoriesResponseDto {
+  @ApiProperty({ type: [StarStoryDto] })
+  stories: StarStoryDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  applicationId: string;
+}
+
+export class InterviewQuestionDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  question: string;
+
+  @ApiProperty({ enum: ["role-specific", "company-specific", "behavioral"] })
+  category: "role-specific" | "company-specific" | "behavioral";
+
+  @ApiProperty({ enum: ["easy", "medium", "hard"] })
+  difficulty: "easy" | "medium" | "hard";
+
+  @ApiPropertyOptional()
+  linkedStoryId?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  tips?: string[];
+}
+
+export class LikelyQuestionsResponseDto {
+  @ApiProperty({ type: [InterviewQuestionDto] })
+  questions: InterviewQuestionDto[];
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  generatedAt: string;
+}
+
+export class InterviewPrepPackDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  companySnapshot: CompanySnapshotDto;
+
+  @ApiProperty()
+  fitBrief: RoleSpecificFitBriefDto;
+
+  @ApiProperty({ type: [StarStoryDto] })
+  starStories: StarStoryDto[];
+
+  @ApiProperty({ type: [InterviewQuestionDto] })
+  likelyQuestions: InterviewQuestionDto[];
+
+  @ApiPropertyOptional()
+  exportUrl?: string;
+
+  @ApiProperty()
+  createdAt: string;
+}
+
+export class InterviewNotesCreateDto {
+  @ApiProperty()
+  interviewDate: string;
+
+  @ApiPropertyOptional()
+  interviewerName?: string;
+
+  @ApiProperty({ enum: ["phone", "video", "in-person", "panel"] })
+  interviewType: "phone" | "video" | "in-person" | "panel";
+
+  @ApiPropertyOptional()
+  duration?: number;
+
+  @ApiProperty()
+  notes: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  rating?: number;
+
+  @ApiPropertyOptional()
+  nextSteps?: string;
+}
+
+export class InterviewNotesUpdateDto {
+  @ApiPropertyOptional()
+  interviewDate?: string;
+
+  @ApiPropertyOptional()
+  interviewerName?: string;
+
+  @ApiPropertyOptional({ enum: ["phone", "video", "in-person", "panel"] })
+  interviewType?: "phone" | "video" | "in-person" | "panel";
+
+  @ApiPropertyOptional()
+  duration?: number;
+
+  @ApiPropertyOptional()
+  notes?: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  rating?: number;
+
+  @ApiPropertyOptional()
+  nextSteps?: string;
+}
+
+export class InterviewNotesDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  interviewDate: string;
+
+  @ApiPropertyOptional()
+  interviewerName?: string;
+
+  @ApiProperty({ enum: ["phone", "video", "in-person", "panel"] })
+  interviewType: "phone" | "video" | "in-person" | "panel";
+
+  @ApiPropertyOptional()
+  duration?: number;
+
+  @ApiProperty()
+  notes: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  rating?: number;
+
+  @ApiPropertyOptional()
+  nextSteps?: string;
+
+  @ApiProperty()
+  createdAt: string;
+
+  @ApiProperty()
+  updatedAt: string;
+}
+
+export class InterviewNotesResponseDto {
+  @ApiProperty({ type: [InterviewNotesDto] })
+  notes: InterviewNotesDto[];
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  total: number;
+}
+
+export class InterviewFeedbackCreateDto {
+  @ApiProperty()
+  interviewDate: string;
+
+  @ApiPropertyOptional()
+  feedbackSource?: string;
+
+  @ApiProperty()
+  feedback: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  areasForImprovement?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  positivePoints?: string[];
+}
+
+export class InterviewFeedbackDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  interviewDate: string;
+
+  @ApiPropertyOptional()
+  feedbackSource?: string;
+
+  @ApiProperty()
+  feedback: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  areasForImprovement?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  positivePoints?: string[];
+
+  @ApiProperty()
+  createdAt: string;
+}
+
+export class InterviewFeedbackResponseDto {
+  @ApiProperty({ type: [InterviewFeedbackDto] })
+  feedback: InterviewFeedbackDto[];
+
+  @ApiProperty()
+  applicationId: string;
+
+  @ApiProperty()
+  total: number;
+}
+
+export class ThankYouEmailRequestDto {
+  @ApiPropertyOptional()
+  interviewerName?: string;
+
+  @ApiProperty()
+  interviewDate: string;
+
+  @ApiProperty({ enum: ["phone", "video", "in-person", "panel"] })
+  interviewType: "phone" | "video" | "in-person" | "panel";
+
+  @ApiPropertyOptional({ type: [String] })
+  keyDiscussionPoints?: string[];
+
+  @ApiPropertyOptional()
+  personalNote?: string;
+}
+
+export class ThankYouEmailResponseDto {
+  @ApiProperty()
+  subject: string;
+
+  @ApiProperty()
+  body: string;
+
+  @ApiPropertyOptional()
+  recipientName?: string;
+
+  @ApiProperty()
+  generatedAt: string;
+}
+
+export class CoachingCompanionResponseDto {
+  @ApiProperty()
+  motivationalAdvice: string;
+
+  @ApiProperty()
+  practiceSuggestion: string;
+
+  @ApiProperty({ type: [String] })
+  feedbackBasedTips: string[];
+
+  @ApiProperty({ type: [String] })
+  starStoryGaps: string[];
+
+  @ApiProperty()
+  lastUpdated: string;
+
+  @ApiProperty()
+  applicationId: string;
+}
+
+// Export type aliases for backward compatibility
+export type CompanySnapshot = CompanySnapshotDto;
+export type CompanyBrochure = CompanyBrochureDto;
+export type RoleSpecificFitBrief = RoleSpecificFitBriefDto;
+export type InterviewPrepPack = InterviewPrepPackDto;
+export type StarStoriesResponse = StarStoriesResponseDto;
+export type LikelyQuestionsResponse = LikelyQuestionsResponseDto;
+export type InterviewNotesResponse = InterviewNotesResponseDto;
+export type InterviewFeedbackResponse = InterviewFeedbackResponseDto;
+export type ThankYouEmailRequest = ThankYouEmailRequestDto;
+export type ThankYouEmailResponse = ThankYouEmailResponseDto;
+export type CoachingCompanionResponse = CoachingCompanionResponseDto;

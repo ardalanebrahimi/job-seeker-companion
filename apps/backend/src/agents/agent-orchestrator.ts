@@ -2,6 +2,11 @@ import { PlannerAgent, PersonaDecision } from "./planner-agent";
 import { WriterAgent, WriterResult } from "./writer-agent";
 import { ReviewerAgent, ReviewResult } from "./reviewer-agent";
 import { CoachAgent, CoachingResult } from "./coach-agent";
+import {
+  ResearcherAgent,
+  ResearchRequest,
+  ResearchResult,
+} from "./researcher-agent";
 import { AgentContext, AgentResponse } from "./base-agent";
 
 export interface V1GenerationRequest {
@@ -46,12 +51,14 @@ export class AgentOrchestrator {
   private writerAgent: WriterAgent;
   private reviewerAgent: ReviewerAgent;
   private coachAgent: CoachAgent;
+  private researcherAgent: ResearcherAgent;
 
   constructor() {
     this.plannerAgent = new PlannerAgent();
     this.writerAgent = new WriterAgent();
     this.reviewerAgent = new ReviewerAgent();
     this.coachAgent = new CoachAgent();
+    this.researcherAgent = new ResearcherAgent();
   }
 
   /**
@@ -456,5 +463,23 @@ export class AgentOrchestrator {
         template: "modern-ats",
       },
     };
+  }
+
+  /**
+   * Execute company research for V4 features
+   * Used by Research service for company snapshots and brochures
+   */
+  async executeResearch(request: ResearchRequest): Promise<ResearchResult> {
+    const context: AgentContext = {
+      userId: "system", // System-level research
+    };
+
+    const result = await this.researcherAgent.executeResearch(request, context);
+
+    if (!result.success) {
+      throw new Error(result.error?.message || "Research failed");
+    }
+
+    return result.data;
   }
 }

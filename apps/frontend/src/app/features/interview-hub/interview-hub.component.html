@@ -1,0 +1,204 @@
+<!-- Loading State -->
+<div *ngIf="loading" class="loading-container">
+  <div class="spinner"></div>
+  <p>Loading interview preparation materials...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error" class="error-container">
+  <p class="error-message">{{ error }}</p>
+  <button (click)="loadInterviewHub()" class="retry-button">Try Again</button>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!loading && !error" class="interview-hub">
+  <!-- Header -->
+  <div class="hub-header">
+    <h1>Interview Hub</h1>
+    <p class="subtitle">Everything you need to prepare for your interview</p>
+  </div>
+
+  <!-- Company Snapshot -->
+  <div *ngIf="companySnapshot" class="section company-snapshot">
+    <h2>Company Overview</h2>
+    <div class="company-card">
+      <div class="company-header">
+        <img
+          *ngIf="companySnapshot.logo"
+          [src]="companySnapshot.logo"
+          [alt]="companySnapshot.name + ' logo'"
+          class="company-logo"
+        />
+        <div class="company-info">
+          <h3>{{ companySnapshot.name }}</h3>
+          <p class="industry">{{ companySnapshot.industry }}</p>
+          <p *ngIf="companySnapshot.size" class="company-size">
+            {{ companySnapshot.size }}
+          </p>
+          <p *ngIf="companySnapshot.headquarters" class="headquarters">
+            📍 {{ companySnapshot.headquarters }}
+          </p>
+        </div>
+      </div>
+
+      <div class="company-summary">
+        <p>{{ companySnapshot.summary }}</p>
+      </div>
+
+      <!-- Recent News -->
+      <div
+        *ngIf="
+          companySnapshot.recentNews && companySnapshot.recentNews.length > 0
+        "
+        class="recent-news"
+      >
+        <h4>Recent News</h4>
+        <div class="news-item" *ngFor="let news of companySnapshot.recentNews">
+          <div class="news-header">
+            <span class="news-title">{{ news.title }}</span>
+            <span class="news-date">{{ formatDate(news.date) }}</span>
+          </div>
+          <p class="news-summary">{{ news.summary }}</p>
+          <a
+            *ngIf="news.url"
+            [href]="news.url"
+            target="_blank"
+            class="news-link"
+            >Read more →</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interview Prep Pack -->
+  <div *ngIf="interviewPrepPack" class="section prep-pack">
+    <div class="section-header">
+      <h2>Interview Preparation Pack</h2>
+      <button
+        *ngIf="interviewPrepPack.exportUrl"
+        (click)="downloadPrepPack()"
+        class="download-button"
+      >
+        📄 Download PDF
+      </button>
+    </div>
+
+    <!-- Fit Brief -->
+    <div class="fit-brief">
+      <h3>Why You're a Great Fit</h3>
+      <div class="fit-reasons">
+        <div
+          class="fit-reason"
+          *ngFor="let reason of interviewPrepPack.fitBrief.fitReasons"
+        >
+          <div
+            class="strength-indicator"
+            [class]="'strength-' + reason.strength"
+          ></div>
+          <div class="reason-content">
+            <h4>{{ reason.reason }}</h4>
+            <p>{{ reason.evidence }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAR Stories -->
+    <div class="star-stories">
+      <h3>Your STAR Stories</h3>
+      <p class="section-description">
+        Use these behavioral examples to answer interview questions
+      </p>
+      <div class="story-grid">
+        <div
+          class="story-card"
+          *ngFor="let story of interviewPrepPack.starStories"
+        >
+          <div class="story-header">
+            <h4>{{ story.title }}</h4>
+            <span class="story-category">{{ story.category }}</span>
+          </div>
+          <div class="star-format">
+            <div class="star-item">
+              <strong>Situation:</strong> {{ story.situation }}
+            </div>
+            <div class="star-item"><strong>Task:</strong> {{ story.task }}</div>
+            <div class="star-item">
+              <strong>Action:</strong> {{ story.action }}
+            </div>
+            <div class="star-item">
+              <strong>Result:</strong> {{ story.result }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Likely Questions -->
+    <div class="likely-questions">
+      <h3>Likely Interview Questions</h3>
+      <div class="question-list">
+        <div
+          class="question-item"
+          *ngFor="let question of interviewPrepPack.likelyQuestions"
+        >
+          <div class="question-header">
+            <span class="question-text">{{ question.question }}</span>
+            <div class="question-meta">
+              <span
+                class="question-category"
+                [class]="'category-' + question.category"
+                >{{ question.category }}</span
+              >
+              <span
+                class="question-difficulty"
+                [class]="'difficulty-' + question.difficulty"
+                >{{ question.difficulty }}</span
+              >
+            </div>
+          </div>
+          <div
+            *ngIf="question.tips && question.tips.length > 0"
+            class="question-tips"
+          >
+            <p><strong>Tips:</strong></p>
+            <ul>
+              <li *ngFor="let tip of question.tips">{{ tip }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coaching Companion -->
+  <div class="section coaching-companion">
+    <h2>Your Interview Coach</h2>
+    <div class="coach-card">
+      <div class="motivational-advice">
+        <h3>💪 Motivation</h3>
+        <p>
+          You've got this! Your background shows strong alignment with their
+          needs. Focus on communicating your impact clearly.
+        </p>
+      </div>
+
+      <div class="practice-suggestion">
+        <h3>🎯 Practice Focus</h3>
+        <p>
+          Practice explaining your most complex project in simple terms - this
+          often comes up in interviews.
+        </p>
+      </div>
+
+      <div class="improvement-tips">
+        <h3>📈 Areas to Emphasize</h3>
+        <ul>
+          <li>Based on similar roles, emphasize your collaboration skills</li>
+          <li>Prepare examples that show your problem-solving process</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

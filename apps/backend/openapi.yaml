@@ -20,6 +20,7 @@ tags:
   - name: Jobs
   - name: Applications
   - name: Coach
+  - name: Research
 
 paths:
   /users/me/cv:
@@ -850,6 +851,377 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # V4 Company Brochure & Interview Hub
+  /companies/{id}/snapshot:
+    get:
+      tags: [Research]
+      summary: Get company snapshot (basic card)
+      operationId: getCompanySnapshot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Company snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySnapshot"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /companies/{id}/brochure:
+    get:
+      tags: [Research]
+      summary: Get multimedia company brochure
+      operationId: getCompanyBrochure
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Company brochure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyBrochure"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/company/snapshot:
+    get:
+      tags: [Applications]
+      summary: Get company snapshot for application
+      operationId: getApplicationCompanySnapshot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Company snapshot for this application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySnapshot"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/fit-brief:
+    get:
+      tags: [Applications]
+      summary: Get role-specific fit brief
+      operationId: getRoleSpecificFitBrief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Role-specific fit brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleSpecificFitBrief"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/interview-prep:
+    get:
+      tags: [Applications]
+      summary: Get interview prep pack
+      operationId: getInterviewPrepPack
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Interview prep pack
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewPrepPack"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/star-stories:
+    get:
+      tags: [Applications]
+      summary: Generate STAR stories for behavioral questions
+      operationId: generateStarStories
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Generated STAR stories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StarStoriesResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/likely-questions:
+    get:
+      tags: [Applications]
+      summary: Get likely interview questions
+      operationId: getLikelyQuestions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Likely interview questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikelyQuestionsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/interview-notes:
+    get:
+      tags: [Applications]
+      summary: Get interview notes for application
+      operationId: getInterviewNotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Interview notes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewNotesResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Applications]
+      summary: Add interview notes
+      operationId: addInterviewNotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewNotesCreate"
+      responses:
+        "201":
+          description: Interview notes added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewNotes"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/interview-notes/{noteId}:
+    put:
+      tags: [Applications]
+      summary: Update interview notes
+      operationId: updateInterviewNotes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewNotesUpdate"
+      responses:
+        "200":
+          description: Interview notes updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewNotes"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/feedback:
+    get:
+      tags: [Applications]
+      summary: Get interview feedback log
+      operationId: getInterviewFeedback
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Interview feedback log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewFeedbackResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Applications]
+      summary: Add interview feedback
+      operationId: addInterviewFeedback
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InterviewFeedbackCreate"
+      responses:
+        "201":
+          description: Interview feedback added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewFeedback"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/thank-you-email:
+    post:
+      tags: [Applications]
+      summary: Generate thank-you email after interview
+      operationId: generateThankYouEmail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ThankYouEmailRequest"
+      responses:
+        "200":
+          description: Generated thank-you email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ThankYouEmailResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /applications/{id}/coaching-companion:
+    get:
+      tags: [Applications]
+      summary: Get coaching companion suggestions for interview hub
+      operationId: getCoachingCompanion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Coaching companion suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachingCompanionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1602,3 +1974,568 @@ components:
               type: string
               description: URL for file download
           required: [id, version, createdAt, templateStyle]
+
+    # V4 Schemas - Company Brochure & Interview Hub
+    CompanySnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Company name
+        logo:
+          type: string
+          description: URL to company logo
+        website:
+          type: string
+          description: Company website URL
+        industry:
+          type: string
+          description: Industry category
+        size:
+          type: string
+          description: Company size (e.g., "50-200 employees")
+        headquarters:
+          type: string
+          description: HQ location
+        summary:
+          type: string
+          description: 2-3 sentence summary of products/services
+        recentNews:
+          type: array
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              url:
+                type: string
+              date:
+                type: string
+                format: date
+              summary:
+                type: string
+            required: [title, date, summary]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, industry, summary, createdAt, updatedAt]
+
+    CompanyBrochure:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyId:
+          type: string
+          format: uuid
+        snapshot:
+          $ref: "#/components/schemas/CompanySnapshot"
+        sections:
+          type: object
+          properties:
+            products:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    description: Image URLs
+            market:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                competitors:
+                  type: array
+                  items:
+                    type: string
+            culture:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                values:
+                  type: array
+                  items:
+                    type: string
+            timeline:
+              type: array
+              items:
+                type: object
+                properties:
+                  year:
+                    type: integer
+                  event:
+                    type: string
+                  description:
+                    type: string
+                required: [year, event]
+        exportUrl:
+          type: string
+          description: URL to export as PDF
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, companyId, snapshot, sections, createdAt]
+
+    RoleSpecificFitBrief:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        fitReasons:
+          type: array
+          items:
+            type: object
+            properties:
+              reason:
+                type: string
+              evidence:
+                type: string
+              strength:
+                type: string
+                enum: [high, medium, low]
+            required: [reason, evidence, strength]
+        skillAlignments:
+          type: array
+          items:
+            type: object
+            properties:
+              skill:
+                type: string
+              userExperience:
+                type: string
+              companyNeed:
+                type: string
+              matchScore:
+                type: number
+                minimum: 0
+                maximum: 1
+            required: [skill, userExperience, companyNeed, matchScore]
+        tone:
+          type: string
+          default: "coaching"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, applicationId, fitReasons, skillAlignments, createdAt]
+
+    InterviewPrepPack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        companySnapshot:
+          $ref: "#/components/schemas/CompanySnapshot"
+        fitBrief:
+          $ref: "#/components/schemas/RoleSpecificFitBrief"
+        starStories:
+          type: array
+          items:
+            $ref: "#/components/schemas/StarStory"
+        likelyQuestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewQuestion"
+        exportUrl:
+          type: string
+          description: URL to export prep pack as PDF
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          applicationId,
+          companySnapshot,
+          fitBrief,
+          starStories,
+          likelyQuestions,
+          createdAt,
+        ]
+
+    StarStory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          description: Brief title for the story
+        category:
+          type: string
+          description: JD requirement this story addresses
+        situation:
+          type: string
+          description: Situation description
+        task:
+          type: string
+          description: Task that needed to be done
+        action:
+          type: string
+          description: Actions taken
+        result:
+          type: string
+          description: Results achieved
+        realityIndex:
+          type: number
+          minimum: 0
+          maximum: 2
+          description: Reality index used for this story
+        isEditable:
+          type: boolean
+          default: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          title,
+          category,
+          situation,
+          task,
+          action,
+          result,
+          realityIndex,
+          createdAt,
+        ]
+
+    StarStoriesResponse:
+      type: object
+      properties:
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/StarStory"
+        total:
+          type: integer
+        applicationId:
+          type: string
+          format: uuid
+      required: [stories, total, applicationId]
+
+    InterviewQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        category:
+          type: string
+          enum: [role-specific, company-specific, behavioral]
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        linkedStoryId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of linked STAR story if applicable
+        tips:
+          type: array
+          items:
+            type: string
+      required: [id, question, category, difficulty]
+
+    LikelyQuestionsResponse:
+      type: object
+      properties:
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewQuestion"
+        applicationId:
+          type: string
+          format: uuid
+        generatedAt:
+          type: string
+          format: date-time
+      required: [questions, applicationId, generatedAt]
+
+    InterviewNotes:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        interviewDate:
+          type: string
+          format: date-time
+        interviewerName:
+          type: string
+          nullable: true
+        interviewType:
+          type: string
+          enum: [phone, video, in-person, panel]
+        duration:
+          type: integer
+          description: Duration in minutes
+          nullable: true
+        notes:
+          type: string
+          description: Detailed interview notes
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: Self-assessment rating
+        nextSteps:
+          type: string
+          nullable: true
+          description: Mentioned next steps
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          applicationId,
+          interviewDate,
+          interviewType,
+          notes,
+          createdAt,
+          updatedAt,
+        ]
+
+    InterviewNotesCreate:
+      type: object
+      properties:
+        interviewDate:
+          type: string
+          format: date-time
+        interviewerName:
+          type: string
+          nullable: true
+        interviewType:
+          type: string
+          enum: [phone, video, in-person, panel]
+        duration:
+          type: integer
+          description: Duration in minutes
+          nullable: true
+        notes:
+          type: string
+          description: Detailed interview notes
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        nextSteps:
+          type: string
+          nullable: true
+      required: [interviewDate, interviewType, notes]
+
+    InterviewNotesUpdate:
+      type: object
+      properties:
+        interviewDate:
+          type: string
+          format: date-time
+        interviewerName:
+          type: string
+          nullable: true
+        interviewType:
+          type: string
+          enum: [phone, video, in-person, panel]
+        duration:
+          type: integer
+          description: Duration in minutes
+          nullable: true
+        notes:
+          type: string
+          description: Detailed interview notes
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        nextSteps:
+          type: string
+          nullable: true
+
+    InterviewNotesResponse:
+      type: object
+      properties:
+        notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewNotes"
+        applicationId:
+          type: string
+          format: uuid
+        total:
+          type: integer
+      required: [notes, applicationId, total]
+
+    InterviewFeedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        applicationId:
+          type: string
+          format: uuid
+        interviewDate:
+          type: string
+          format: date-time
+        feedbackSource:
+          type: string
+          description: Who provided the feedback
+        feedback:
+          type: string
+          description: Detailed feedback
+        areasForImprovement:
+          type: array
+          items:
+            type: string
+        positivePoints:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, applicationId, interviewDate, feedback, createdAt]
+
+    InterviewFeedbackCreate:
+      type: object
+      properties:
+        interviewDate:
+          type: string
+          format: date-time
+        feedbackSource:
+          type: string
+        feedback:
+          type: string
+        areasForImprovement:
+          type: array
+          items:
+            type: string
+        positivePoints:
+          type: array
+          items:
+            type: string
+      required: [interviewDate, feedback]
+
+    InterviewFeedbackResponse:
+      type: object
+      properties:
+        feedback:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewFeedback"
+        applicationId:
+          type: string
+          format: uuid
+        total:
+          type: integer
+      required: [feedback, applicationId, total]
+
+    ThankYouEmailRequest:
+      type: object
+      properties:
+        interviewerName:
+          type: string
+          nullable: true
+        interviewDate:
+          type: string
+          format: date-time
+        interviewType:
+          type: string
+          enum: [phone, video, in-person, panel]
+        keyDiscussionPoints:
+          type: array
+          items:
+            type: string
+        personalNote:
+          type: string
+          nullable: true
+          description: Optional personal note to include
+      required: [interviewDate, interviewType]
+
+    ThankYouEmailResponse:
+      type: object
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        recipientName:
+          type: string
+          nullable: true
+        generatedAt:
+          type: string
+          format: date-time
+      required: [subject, body, generatedAt]
+
+    CoachingCompanionResponse:
+      type: object
+      properties:
+        motivationalAdvice:
+          type: string
+          description: Motivational advice for interview prep
+        practiceSuggestion:
+          type: string
+          description: Specific practice suggestion
+        feedbackBasedTips:
+          type: array
+          items:
+            type: string
+          description: Tips based on feedback logs
+        starStoryGaps:
+          type: array
+          items:
+            type: string
+          description: Areas where more STAR stories are needed
+        lastUpdated:
+          type: string
+          format: date-time
+        applicationId:
+          type: string
+          format: uuid
+      required:
+        [
+          motivationalAdvice,
+          practiceSuggestion,
+          feedbackBasedTips,
+          starStoryGaps,
+          lastUpdated,
+          applicationId,
+        ]

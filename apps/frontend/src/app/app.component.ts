@@ -23,6 +23,9 @@ import { RouterOutlet, RouterLink } from "@angular/router";
             <a routerLink="/applications/test-123/variants" class="nav-link"
               >V3 Document Variants ⚡</a
             >
+            <a routerLink="/v4-demo" class="nav-link"
+              >🚀 V4 Demo & Features</a
+            >
           </nav>
         </div>
       </header>

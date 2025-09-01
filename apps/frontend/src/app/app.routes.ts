@@ -76,4 +76,33 @@ export const routes: Routes = [
         "./features/applications/v3-documents/v3-document-diff.component"
       ).then((m) => m.V3DocumentDiffComponent),
   },
+  // V4 Routes - Interview Hub & Company Research
+  {
+    path: "v4-demo",
+    loadComponent: () =>
+      import("./features/v4-demo/v4-demo.component").then(
+        (m) => m.V4DemoComponent
+      ),
+  },
+  {
+    path: "applications/:id/interview-hub",
+    loadComponent: () =>
+      import("./features/interview-hub/interview-hub.component").then(
+        (m) => m.InterviewHubComponent
+      ),
+  },
+  {
+    path: "applications/:id/company-brochure",
+    loadComponent: () =>
+      import("./features/company-brochure/company-brochure.component").then(
+        (m) => m.CompanyBrochureComponent
+      ),
+  },
+  {
+    path: "companies/:id/brochure",
+    loadComponent: () =>
+      import("./features/company-brochure/company-brochure.component").then(
+        (m) => m.CompanyBrochureComponent
+      ),
+  },
 ];

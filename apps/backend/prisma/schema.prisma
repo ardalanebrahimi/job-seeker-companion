@@ -63,6 +63,9 @@ model Application {
   notes       Note[]
   reminders   Reminder[]
   history     ApplicationHistory[]
+  interviewNotes InterviewNotes[]
+  interviewFeedback InterviewFeedback[]
+  starStories StarStory[]
 
   @@map("applications")
 }
@@ -199,4 +202,120 @@ enum DocumentFormat {
   md
   docx
   pdf
+}
+
+// V4 Models - Company Brochure & Interview Hub
+model Company {
+  id           String             @id @default(uuid())
+  name         String
+  website      String?
+  industry     String?
+  size         String?
+  headquarters String?
+  logo         String?
+  summary      String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  snapshots    CompanySnapshot[]
+  brochures    CompanyBrochure[]
+
+  @@map("companies")
+}
+
+model CompanySnapshot {
+  id          String           @id @default(uuid())
+  companyId   String
+  name        String
+  logo        String?
+  website     String?
+  industry    String
+  size        String?
+  headquarters String?
+  summary     String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  company     Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recentNews  CompanyNews[]
+
+  @@map("company_snapshots")
+}
+
+model CompanyNews {
+  id         String          @id @default(uuid())
+  snapshotId String
+  title      String
+  url        String?
+  date       DateTime
+  summary    String
+  createdAt  DateTime        @default(now())
+  snapshot   CompanySnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@map("company_news")
+}
+
+model CompanyBrochure {
+  id         String   @id @default(uuid())
+  companyId  String
+  sections   Json     // Stores the brochure sections as JSON
+  exportUrl  String?
+  createdAt  DateTime @default(now())
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_brochures")
+}
+
+model InterviewNotes {
+  id             String            @id @default(uuid())
+  applicationId  String
+  interviewDate  DateTime
+  interviewerName String?
+  interviewType  InterviewType
+  duration       Int?              // Duration in minutes
+  notes          String
+  rating         Int?              // 1-5 rating
+  nextSteps      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  application    Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("interview_notes")
+}
+
+model InterviewFeedback {
+  id                   String      @id @default(uuid())
+  applicationId        String
+  interviewDate        DateTime
+  feedbackSource       String?
+  feedback             String
+  areasForImprovement  Json?       // Array of strings
+  positivePoints       Json?       // Array of strings
+  createdAt            DateTime    @default(now())
+  application          Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("interview_feedback")
+}
+
+model StarStory {
+  id            String      @id @default(uuid())
+  applicationId String
+  title         String
+  category      String      // JD requirement this story addresses
+  situation     String
+  task          String
+  action        String
+  result        String
+  realityIndex  Float       // 0-2 reality index
+  isEditable    Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("star_stories")
+}
+
+enum InterviewType {
+  phone
+  video
+  in_person
+  panel
 }
